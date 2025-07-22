@@ -19,6 +19,4 @@
 !LICENSE
 !CHANGELOG.md
 !README.md
-!.mod.ts
-
-*.md
+!mod.ts
