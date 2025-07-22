@@ -3,12 +3,12 @@
  * This module defines the schema for the Stoat logger configuration.
  * @module
  */
-import { z } from 'zod'
 import { LOG_LEVEL } from '../types/log.ts'
-import { EnumValues } from '../utils/helpers.ts'
+import type { LogLevel } from '../types/log.ts'
 
 /**
- * Stoat Configuration Schema
+ * Stoat Configuration interface
+ * Defines the structure for Stoat logger configuration.
  *
  * @property {LogLevel} level - Minimum log level to process.
  * @property {number} bufferSize - Size of the log buffer.
@@ -20,43 +20,37 @@ import { EnumValues } from '../utils/helpers.ts'
  * @property {boolean} compress - Whether to compress log files
  * @property {string} [module] - Module identifier for context tracking.
  * @property {Record<string, unknown>} [metadata] - Additional metadata to include in all log entries.
- * @property {boolean} prettyPrint - Whether to enable pretty-print JSON format for
+ * @property {boolean} prettyPrint - Whether to enable pretty-print JSON format for console output.
  */
-const StoatConfigBase = z.object({
-  level: z.enum(EnumValues(LOG_LEVEL)).describe('Minimum log level to process'),
-  bufferSize: z.number().default(10000).describe('Buffer size for log entries'),
-  flushInterval: z.number().default(1000).describe('Flush interval in milliseconds'),
-  maxFileSize: z.number().default(100 * 1024 * 1024).describe('Maximum file size in bytes'),
-  maxFiles: z.number().default(10).describe('Maximum number of log files to retain'),
-  enablePerformanceTracking: z.boolean().default(true).describe('Enable performance tracking'),
-  outputDir: z.string().optional().describe(
-    'Output directory for log files - when undefined, console-only logging is used',
-  ),
-  compress: z.boolean().default(false).describe('Enable log file compression'),
-  module: z.string().optional().describe('Module identifier for context tracking'),
-  metadata: z.record(z.unknown()).optional().describe('Additional metadata to include in all log entries'),
-  prettyPrint: z.boolean().default(false).describe('Enable pretty-print JSON format for console output'),
-})
-
-/**
- * Raw schema
- */
-export const StoatConfigSchemaRaw = StoatConfigBase.extend({}).describe('Raw Logger configuration schema')
-
-/**
- * Serialized schema
- */
-export const StoatConfigSchema = StoatConfigBase.extend({}).describe('Serialized Logger configuration schema')
+export interface StoatConfigSchema {
+  /** Minimum log level to process */
+  level: LogLevel
+  /** Buffer size for log entries */
+  bufferSize: number
+  /** Flush interval in milliseconds */
+  flushInterval: number
+  /** Maximum file size in bytes */
+  maxFileSize: number
+  /** Maximum number of log files to retain */
+  maxFiles: number
+  /** Enable performance tracking */
+  enablePerformanceTracking: boolean
+  /** Output directory for log files - when undefined, console-only logging is used */
+  outputDir?: string
+  /** Enable log file compression */
+  compress: boolean
+  /** Module identifier for context tracking */
+  module?: string
+  /** Additional metadata to include in all log entries */
+  metadata?: Record<string, unknown>
+  /** Enable pretty-print JSON format for console output */
+  prettyPrint: boolean
+}
 
 /**
  * Stoat Config Type
  */
-export type StoatConfig = z.infer<typeof StoatConfigSchema>
-
-/**
- * Stoat Config Raw Type
- */
-export type StoatConfigRaw = z.infer<typeof StoatConfigSchemaRaw>
+export type StoatConfig = StoatConfigSchema
 
 /**
  * Default configuration for Logger instances
@@ -70,7 +64,7 @@ export type StoatConfigRaw = z.infer<typeof StoatConfigSchemaRaw>
  * @property {boolean} compress - Default set to false, meaning logs are not compressed.
  * @property {boolean} prettyPrint - Default set to false, meaning logs are not pretty
  */
-export const DEFAULT_STOAT_CONFIG = StoatConfigSchema.parse({
+export const DEFAULT_STOAT_CONFIG: StoatConfig = {
   level: LOG_LEVEL.Info,
   bufferSize: 10000,
   flushInterval: 1000,
@@ -79,4 +73,4 @@ export const DEFAULT_STOAT_CONFIG = StoatConfigSchema.parse({
   enablePerformanceTracking: true,
   compress: false,
   prettyPrint: false,
-})
+}

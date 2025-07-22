@@ -1,9 +1,10 @@
 import { assert, assertEquals, assertExists, assertGreater } from '@std/assert'
 import { describe, it } from '@std/testing/bdd'
-import { createStructuredEntry, StructuredLogger } from '../../logging/structured.ts'
-import { createSerializer, CustomSerializerEngine, serialize, serializeFast } from '../../serializers/serializer.ts'
-import { createCustomLevel, getGlobalLevelManager, LogLevelManager } from '../../types/levels.ts'
-import { DEFAULT_CONFIGS, validateConfig } from '../../types/schema.ts'
+import { createStructuredEntry, StructuredLogger } from '../../loggers/structured-log-entry.ts'
+import { createSerializer, CustomSerializerEngine, serialize, serializeFast } from '../../services/serializer.ts'
+import { createCustomLevel, getGlobalLevelManager, LogLevelManager } from '../../services/mod.ts'
+import { DEFAULT_CONFIGS } from '../../types/defaults.ts'
+import { validateConfig } from '../../types/validation.ts'
 import {
   createAgentId,
   createOrderId,

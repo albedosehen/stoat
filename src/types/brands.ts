@@ -3,7 +3,7 @@
  * @module
  */
 
-import { StructuredLogger } from '../logging/structured.ts'
+import { StructuredLogger } from '../loggers/structured-log-entry.ts'
 import type { StoatConfig } from '../stoat/config.ts'
 
 // Base brand type for nominal typing

@@ -1,15 +1,22 @@
 import { assert, assertEquals, assertExists, assertGreater, assertGreaterOrEqual, assertLessOrEqual } from '@std/assert'
 import { afterEach, beforeEach, describe, it } from '@std/testing/bdd'
 import { assertSpyCalls, type Spy, spy } from '@std/testing/mock'
-import { ASYNC_CONFIGS, type AsyncConfig, AsyncLogger, createAsyncLogger, getAsyncConfig } from '../../logging/async.ts'
-import type { StructuredLogEntry } from '../../logging/structured.ts'
+import {
+  ASYNC_CONFIGS,
+  type AsyncConfig,
+  AsyncLogger,
+  createAsyncLogger,
+  getAsyncConfig,
+} from '../../loggers/async-logger.ts'
+import type { StructuredLogEntry } from '../../loggers/structured-log-entry.ts'
 import { createAgentId, createLogMessage, createStrategyId, createTimestamp } from '../../types/brands.ts'
-import { LOG_LEVEL_VALUES } from '../../types/schema.ts'
+import { LOG_LEVEL_VALUES } from '../../types/logLevels.ts'
 
 describe('Async Logging System', () => {
   let asyncLogger: AsyncLogger
   let testConfig: AsyncConfig
   let syncCallbackSpy: Spy
+  let additionalLoggers: AsyncLogger[] = []
 
   function createTestEntry(
     level: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal' = 'info',
@@ -23,7 +30,13 @@ describe('Async Logging System', () => {
     }
   }
 
+  function trackLogger(logger: AsyncLogger): AsyncLogger {
+    additionalLoggers.push(logger)
+    return logger
+  }
+
   beforeEach(() => {
+    additionalLoggers = []
     testConfig = {
       bufferSize: 100,
       maxBufferSize: 500,
@@ -50,7 +63,20 @@ describe('Async Logging System', () => {
   })
 
   afterEach(async () => {
+    // Destroy all additional loggers first
+    for (const logger of additionalLoggers) {
+      try {
+        await logger.flush()
+        await logger.destroy()
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+    additionalLoggers = []
+
     if (asyncLogger) {
+      // Ensure all pending operations complete before destroying
+      await asyncLogger.flush()
       await asyncLogger.destroy()
     }
   })
@@ -81,8 +107,8 @@ describe('Async Logging System', () => {
       assertExists(asyncLogger)
     })
 
-    it('should create logger using factory function', () => {
-      const factoryLogger = createAsyncLogger(testConfig, syncCallbackSpy)
+    it('should create logger using factory function', async () => {
+      const factoryLogger = trackLogger(createAsyncLogger(testConfig, syncCallbackSpy))
 
       assertExists(factoryLogger)
       assertEquals(factoryLogger.constructor.name, 'AsyncLogger')
@@ -158,12 +184,12 @@ describe('Async Logging System', () => {
       assert(!asyncLogger.isSyncMode())
     })
 
-    it('should handle sync callback errors gracefully', () => {
+    it('should handle sync callback errors gracefully', async () => {
       const errorCallback = spy(() => {
         throw new Error('Sync callback error')
       })
 
-      const loggerWithErrorCallback = new AsyncLogger(testConfig, errorCallback)
+      const loggerWithErrorCallback = trackLogger(new AsyncLogger(testConfig, errorCallback))
 
       // Should not throw
       loggerWithErrorCallback.logSync(createTestEntry('error', 'Error test'))
@@ -171,8 +197,8 @@ describe('Async Logging System', () => {
       assertSpyCalls(errorCallback, 1)
     })
 
-    it('should fallback to console when no sync callback provided', () => {
-      const loggerWithoutCallback = new AsyncLogger(testConfig)
+    it('should fallback to console when no sync callback provided', async () => {
+      const loggerWithoutCallback = trackLogger(new AsyncLogger(testConfig))
       const consoleSpy = spy(console, 'log')
 
       loggerWithoutCallback.logSync(createTestEntry('info', 'Console fallback'))
@@ -204,12 +230,23 @@ describe('Async Logging System', () => {
         bufferSize: 3,
         maxBufferSize: 5,
         enableBackpressure: true,
+        flushInterval: 10000, // Prevent automatic flushing during test
+        syncFallback: false, // Disable sync fallback to force async path
+        syncThreshold: 100 * 1024 * 1024, // 100MB - high threshold to avoid triggering
       }
 
-      const smallBufferLogger = new AsyncLogger(smallBufferConfig, syncCallbackSpy)
+      // Create a failing sync callback to simulate flush failures
+      const failingSyncCallback = spy(() => {
+        throw new Error('Simulated flush failure')
+      })
 
-      // Fill beyond buffer capacity
-      const entries = Array.from({ length: 10 }, (_, i) => createTestEntry('info', `Overflow test ${i}`))
+      const smallBufferLogger = trackLogger(new AsyncLogger(smallBufferConfig, failingSyncCallback))
+
+      // Fill beyond buffer capacity - use entries with data to bypass fast path
+      const entries = Array.from({ length: 10 }, (_, i) => ({
+        ...createTestEntry('info', `Overflow test ${i}`),
+        data: { testId: i }, // Add data to bypass fast path
+      }))
 
       for (const entry of entries) {
         await smallBufferLogger.log(entry)
@@ -217,8 +254,6 @@ describe('Async Logging System', () => {
 
       const metrics = smallBufferLogger.getMetrics()
       assertGreater(metrics.backpressureEvents, 0)
-
-      await smallBufferLogger.destroy()
     })
 
     it('should drop entries when buffer is full and backpressure disabled', async () => {
@@ -227,19 +262,28 @@ describe('Async Logging System', () => {
         bufferSize: 3,
         maxBufferSize: 5,
         enableBackpressure: false,
+        flushInterval: 10000, // Prevent automatic flushing during test
+        syncFallback: false, // Disable sync fallback to force async path
+        syncThreshold: 100 * 1024 * 1024, // 100MB - high threshold to avoid triggering
       }
 
-      const dropLogger = new AsyncLogger(noBackpressureConfig, syncCallbackSpy)
+      // Create a failing sync callback to simulate flush failures
+      const failingSyncCallback = spy(() => {
+        throw new Error('Simulated flush failure')
+      })
 
-      // Overfill buffer
+      const dropLogger = trackLogger(new AsyncLogger(noBackpressureConfig, failingSyncCallback))
+
+      // Overfill buffer - use entries with data to bypass fast path
       for (let i = 0; i < 10; i++) {
-        await dropLogger.log(createTestEntry('info', `Drop test ${i}`))
+        await dropLogger.log({
+          ...createTestEntry('info', `Drop test ${i}`),
+          data: { testId: i }, // Add data to bypass fast path
+        })
       }
 
       const metrics = dropLogger.getMetrics()
       assertGreater(metrics.entriesDropped, 0)
-
-      await dropLogger.destroy()
     })
 
     it('should trigger immediate flush for high-priority entries', async () => {
@@ -262,11 +306,13 @@ describe('Async Logging System', () => {
         await asyncLogger.log(createTestEntry('info', `Metrics test ${i}`))
       }
 
+      // Check buffered metrics before flush
+      const beforeFlushMetrics = asyncLogger.getMetrics()
+      assertGreater(beforeFlushMetrics.entriesBuffered, startMetrics.entriesBuffered)
+
       await asyncLogger.flush()
 
       const endMetrics = asyncLogger.getMetrics()
-
-      assertGreater(endMetrics.entriesBuffered, startMetrics.entriesBuffered)
       assertGreater(endMetrics.entriesFlushed, startMetrics.entriesFlushed)
       assertGreaterOrEqual(endMetrics.flushCount, 1)
     })
@@ -300,7 +346,7 @@ describe('Async Logging System', () => {
         throw new Error('Flush error')
       })
 
-      const errorLogger = new AsyncLogger(testConfig, errorCallback)
+      const errorLogger = trackLogger(new AsyncLogger(testConfig, errorCallback))
 
       await errorLogger.log(createTestEntry('info', 'Error test'))
 
@@ -309,8 +355,6 @@ describe('Async Logging System', () => {
 
       const metrics = errorLogger.getMetrics()
       assertGreater(metrics.errorCount, 0)
-
-      await errorLogger.destroy()
     })
 
     it('should retry failed entries up to max retries', async () => {
@@ -322,22 +366,34 @@ describe('Async Logging System', () => {
         }
       })
 
-      const retryLogger = new AsyncLogger({
-        ...testConfig,
-        maxRetries: 3,
-        retryDelay: 10,
-      }, retryCallback)
+      const retryLogger = trackLogger(
+        new AsyncLogger({
+          ...testConfig,
+          maxRetries: 3,
+          retryDelay: 10,
+        }, retryCallback),
+      )
 
       await retryLogger.log(createTestEntry('info', 'Retry test'))
       await retryLogger.flush()
 
-      // Wait for retries to complete
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      // Wait for retries to complete with proper cleanup
+      let timeoutId: number | undefined
+      try {
+        await new Promise<void>((resolve) => {
+          timeoutId = setTimeout(() => {
+            resolve()
+          }, 100)
+        })
 
-      // Should have retried the entry
-      assertGreaterOrEqual(retryCallback.calls.length, 1)
-
-      await retryLogger.destroy()
+        // Should have retried the entry
+        assertGreaterOrEqual(retryCallback.calls.length, 1)
+      } finally {
+        // Ensure timeout is cleared
+        if (timeoutId !== undefined) {
+          clearTimeout(timeoutId)
+        }
+      }
     })
 
     it('should prevent logging to destroyed logger', async () => {
@@ -382,8 +438,8 @@ describe('Async Logging System', () => {
       assertEquals(devConfig.syncFallback, false)
     })
 
-    it('should create logger with preset configuration', () => {
-      const tradingLogger = createAsyncLogger(ASYNC_CONFIGS.trading, syncCallbackSpy)
+    it('should create logger with preset configuration', async () => {
+      const tradingLogger = trackLogger(createAsyncLogger(ASYNC_CONFIGS.trading, syncCallbackSpy))
 
       assertExists(tradingLogger)
       assertEquals(tradingLogger.constructor.name, 'AsyncLogger')
@@ -443,7 +499,7 @@ describe('Async Logging System', () => {
         processedEntries.push(entry)
       })
 
-      const priorityLogger = new AsyncLogger(testConfig, priorityCallback)
+      const priorityLogger = trackLogger(new AsyncLogger(testConfig, priorityCallback))
 
       // Add entries in mixed priority order
       await priorityLogger.log(createTestEntry('info', 'Low priority'))
@@ -455,8 +511,6 @@ describe('Async Logging System', () => {
 
       // Verify that higher priority entries were processed
       assertGreaterOrEqual(processedEntries.length, 4)
-
-      await priorityLogger.destroy()
     })
 
     it('should drop low-priority entries under memory pressure', async () => {
@@ -464,19 +518,21 @@ describe('Async Logging System', () => {
         ...testConfig,
         maxBufferSize: 10,
         enableBackpressure: false,
+        flushInterval: 10000, // Prevent automatic flushing during test
       }
 
-      const pressureLogger = new AsyncLogger(pressureConfig, syncCallbackSpy)
+      const pressureLogger = trackLogger(new AsyncLogger(pressureConfig, syncCallbackSpy))
 
-      // Fill with low priority entries
+      // Fill with low priority entries - use entries with data to bypass fast path
       for (let i = 0; i < 15; i++) {
-        await pressureLogger.log(createTestEntry('debug', `Low priority ${i}`))
+        await pressureLogger.log({
+          ...createTestEntry('debug', `Low priority ${i}`),
+          data: { testId: i }, // Add data to bypass fast path
+        })
       }
 
       const metrics = pressureLogger.getMetrics()
       assertGreater(metrics.entriesDropped, 0)
-
-      await pressureLogger.destroy()
     })
   })
 
@@ -526,7 +582,7 @@ describe('Async Logging System', () => {
 
     it('should handle high-frequency trading scenarios', async () => {
       const hftConfig = ASYNC_CONFIGS.trading
-      const hftLogger = new AsyncLogger(hftConfig, syncCallbackSpy)
+      const hftLogger = trackLogger(new AsyncLogger(hftConfig, syncCallbackSpy))
 
       const startTime = performance.now()
 
@@ -547,8 +603,6 @@ describe('Async Logging System', () => {
 
       const metrics = hftLogger.getMetrics()
       assertGreaterOrEqual(metrics.entriesFlushed, 1000)
-
-      await hftLogger.destroy()
     })
   })
 })

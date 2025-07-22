@@ -1,4 +1,57 @@
-// Ultra-simple synchronous logging infrastructure
-// Console-first with optional file appending - completely fire-and-forget
+/**
+ * Main Stoat Module Export
+ * @module
+ */
 
-export { stoat } from './src/core/stoat.ts'
+export {
+  AsyncTransportError,
+  BufferOverflowError,
+  CircularReferenceError,
+  ConfigurationError,
+  DataRedactionError,
+  EnvironmentConfigError,
+  ErrorBoundary,
+  FileTransportError,
+  InputSanitizationError,
+  PerformanceError,
+  TransportError,
+  PluginError,
+  RateLimitExceededError,
+  SchemaValidationError,
+  SecurityError,
+  SerializationError,
+  StoatError,
+  ValidationError,
+  createErrorContext,
+  type StoatErrorContext,
+  type ErrorBoundaryConfig,
+  type ErrorBoundaryHandler,
+} from './src/errors/errors.ts'
+
+export {
+  AsyncLogger,
+  createAsyncLogger,
+  getAsyncConfig,
+  ASYNC_CONFIGS,
+  type AsyncConfig,
+  type AsyncLoggerConfig,
+  type AsyncMetrics,
+  type BufferEntry,
+  type FlushStrategy,
+} from './src/loggers/async-logger.ts'
+
+export {
+  StructuredLogger,
+  createStructuredEntry,
+  createStructuredLogger,
+  serializeLogEntry,
+  type FieldMapping,
+  type SerializationOptions,
+  type StructuredError,
+  type StructuredLogEntry,
+}from './src/loggers/structured-log-entry.ts'
+
+export * from './src/services/mod.ts'
+
+export { stoat } from './src/stoat/stoat.ts'
+

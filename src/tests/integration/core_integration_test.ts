@@ -1,11 +1,13 @@
 import { assert, assertEquals, assertExists, assertGreater } from '@std/assert'
 import { describe, it } from '@std/testing/bdd'
-import { createStructuredEntry, StructuredLogger } from '../../logging/structured.ts'
-import { AsyncLogger } from '../../logging/async.ts'
-import { ConsoleTransport } from '../../transports/console.ts'
-import { createSerializer, CustomSerializerEngine } from '../../serializers/serializer.ts'
-import { createCustomLevel, getGlobalLevelManager, LogLevelManager } from '../../types/levels.ts'
-import { DEFAULT_CONFIGS, LOG_LEVEL_VALUES, validateConfig } from '../../types/schema.ts'
+import { createStructuredEntry, StructuredLogger } from '../../loggers/structured-log-entry.ts'
+import { AsyncLogger } from '../../loggers/async-logger.ts'
+import { ConsoleTransport } from '../../services/console.ts'
+import { createSerializer, CustomSerializerEngine } from '../../services/serializer.ts'
+import { createCustomLevel, getGlobalLevelManager, LogLevelManager } from '../../services/mod.ts'
+import { DEFAULT_CONFIGS } from '../../types/defaults.ts'
+import { LOG_LEVEL_VALUES } from '../../types/logLevels.ts'
+import { validateConfig } from '../../types/validation.ts'
 import {
   createAgentId,
   createLogMessage,
@@ -109,7 +111,7 @@ describe('Core System Integration Tests', () => {
         maxBufferSize: 500,
         flushInterval: 50,
         batchSize: 10,
-        syncOnExit: false,
+        syncOnExit: false, // Disable for tests
         enableBackpressure: false,
         maxRetries: 0,
         retryDelay: 0,
@@ -125,40 +127,45 @@ describe('Core System Integration Tests', () => {
         syncThreshold: 10 * 1024 * 1024,
       })
 
-      const serializer = new CustomSerializerEngine({
-        fastPaths: true,
-        enablePerformanceTracking: true,
-      })
-
-      const promises = []
-      for (let i = 0; i < 10; i++) {
-        const data = {
-          orderId: createOrderId(`async-${i}`),
-          symbol: createSymbol('ASYNC'),
-          price: 100 + i,
-          iteration: i,
-        }
-
-        const serialized = serializer.serialize(data)
-        assertExists(serialized.value)
-
-        const promise = asyncLogger.log({
-          level: 'info',
-          levelValue: LOG_LEVEL_VALUES.info,
-          message: createLogMessage(`Async test ${i}`),
-          data: serialized.value,
-          timestamp: createTimestamp(new Date().toISOString()),
+      try {
+        const serializer = new CustomSerializerEngine({
+          fastPaths: true,
+          enablePerformanceTracking: true,
         })
 
-        promises.push(promise)
+        const promises = []
+        for (let i = 0; i < 10; i++) {
+          const data = {
+            orderId: createOrderId(`async-${i}`),
+            symbol: createSymbol('ASYNC'),
+            price: 100 + i,
+            iteration: i,
+          }
+
+          const serialized = serializer.serialize(data)
+          assertExists(serialized.value)
+
+          const promise = asyncLogger.log({
+            level: 'info',
+            levelValue: LOG_LEVEL_VALUES.info,
+            message: createLogMessage(`Async test ${i}`),
+            data: serialized.value,
+            timestamp: createTimestamp(new Date().toISOString()),
+          })
+
+          promises.push(promise)
+        }
+
+        await Promise.all(promises)
+        await asyncLogger.flush()
+
+        const metrics = asyncLogger.getMetrics()
+        assertGreater(metrics.entriesFlushed, 0)
+        assertExists(metrics.bufferUtilization)
+      } finally {
+        // Always clean up resources
+        await asyncLogger.destroy()
       }
-
-      await Promise.all(promises)
-      await asyncLogger.flush()
-
-      const metrics = asyncLogger.getMetrics()
-      assertGreater(metrics.entriesFlushed, 0)
-      assertExists(metrics.bufferUtilization)
     })
 
     it('should integrate console transport with structured data', async () => {

@@ -4,9 +4,9 @@
  */
 
 import type { Timestamp } from '../types/brands.ts'
-import type { LogLevelName } from '../types/schema.ts'
-import type { StoatContext } from '../context/correlation.ts'
-import type { StructuredLogEntry } from '../logging/structured.ts'
+import type { LogLevelName } from '../types/logLevels.ts'
+import type { StoatContext } from '../stoat/context.ts'
+import type { StructuredLogEntry } from '../loggers/structured-log-entry.ts'
 
 /**
  * Transport destination type

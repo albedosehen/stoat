@@ -3,12 +3,8 @@
  * @module
  */
 import { Timer } from '../services/timer.ts'
-import {
-  LOG_LEVEL,
-  LOG_LEVEL_PRIORITY,
-  type LogLevel,
-} from '../types/log.ts'
-import { DEFAULT_STOAT_CONFIG, type StoatConfig} from '../stoat/config.ts'
+import { LOG_LEVEL, LOG_LEVEL_PRIORITY, type LogLevel } from '../types/log.ts'
+import { DEFAULT_STOAT_CONFIG, type StoatConfig } from '../stoat/config.ts'
 
 import { type StoatMessage } from '../stoat/message.ts'
 import type { StoatContext } from '../stoat/context.ts'

@@ -6,7 +6,6 @@
 
 import type { LogLevel, OperationId, RequestId, TraceId } from '../types/brands.ts'
 
-
 /**
  * Stoat error context interface
  * Contains metadata about the error, including trace and request IDs

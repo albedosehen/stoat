@@ -5,25 +5,10 @@
  * @module
  */
 
-export {
-  DEFAULT_STOAT_CONFIG,
-  type StoatConfig,
-  type StoatConfigRaw,
-  StoatConfigSchema,
-  StoatConfigSchemaRaw,
-} from './config.ts'
+export { DEFAULT_STOAT_CONFIG, type StoatConfig, type StoatConfigSchema } from './config.ts'
 
-export {
-  LOG_LEVEL,
-  LOG_LEVEL_CONFIG,
-  LOG_LEVEL_PRIORITY,
-  LOG_SEVERITY_COLORS,
-  type LogColor,
-  type LogLevel,
-  type LogLevelConfig,
-  type LogLevelPriority,
-} from '../types/log.ts'
+export { type StoatContext } from './context.ts'
 
-export { type StoatContext, type StoatContextRaw, StoatContextSchema, StoatContextSchemaRaw } from './context.ts'
+export { type StoatMessage, type StoatMessageSchema } from './message.ts'
 
-export { type StoatMessage, type StoatMessageRaw, StoatMessageSchema, StoatMessageSchemaRaw } from './message.ts'
+export { stoat } from './stoat.ts'

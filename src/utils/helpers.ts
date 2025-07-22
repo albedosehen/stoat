@@ -4,7 +4,7 @@
  */
 
 /**
- * Extracts the values from an enum-like object for use with Zod's z.enum()
+ * Extracts the values from an enum-like object for type validation
  * @param enumObject - The enum object to extract values from
  * @returns Array of enum values as a tuple for TypeScript inference
  */

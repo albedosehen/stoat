@@ -7,9 +7,9 @@
  */
 
 import type { LogMessage, RequestId, SpanId, Timestamp, TraceId } from '../types/brands.ts'
-import type { StoatContext } from '../context/correlation.ts'
-import type { LogLevelName, LogLevelValue } from '../types/schema.ts'
-import { LOG_LEVEL_VALUES } from '../types/schema.ts'
+import type { StoatContext } from '../stoat/context.ts'
+import type { LogLevelName, LogLevelValue } from '../types/logLevels.ts'
+import { LOG_LEVEL_VALUES } from '../types/logLevels.ts'
 import { CircularReferenceError, createErrorContext, SerializationError } from '../errors/errors.ts'
 
 /**
@@ -161,6 +161,12 @@ export interface SerializationOptions {
 
   /** Format used for log levels: string ("info"), number (100), or both */
   levelFormat?: 'string' | 'number' | 'both'
+
+  /** List of sensitive field paths to redact during serialization */
+  sensitiveFields?: string[]
+
+  /** Pattern to use for redacting sensitive data */
+  redactionPattern?: string
 }
 
 /**
@@ -221,6 +227,10 @@ export interface FieldMapping {
 export class StructuredLogger {
   private circularRefs = new Set<object>()
   private defaultOptions: Required<SerializationOptions>
+  private totalEntries = 0
+  private errorCount = 0
+  private serializationTimes: number[] = []
+  private processingTimes: number[] = []
 
   constructor(options: SerializationOptions = {}) {
     this.defaultOptions = {
@@ -233,6 +243,18 @@ export class StructuredLogger {
       customFields: {},
       timestampFormat: 'iso',
       levelFormat: 'string',
+      sensitiveFields: [
+        'password',
+        'token',
+        'apiKey',
+        'secret',
+        'authorization',
+        'cookie',
+        'ssn',
+        'creditCard',
+        'sensitive',
+      ],
+      redactionPattern: '[REDACTED]',
       ...options,
     }
   }
@@ -264,6 +286,7 @@ export class StructuredLogger {
     context?: StoatContext
     options?: Partial<SerializationOptions>
   }): StructuredLogEntry {
+    const startTime = performance.now()
     const opts = { ...this.defaultOptions, ...options }
 
     const entry: StructuredLogEntry = {
@@ -283,7 +306,7 @@ export class StructuredLogger {
       module: context?.module,
       function: context?.function,
 
-      data: data ? this.serializeData(data, opts) : undefined,
+      data: data ? this.sanitizeData(data, opts) : data,
       error: error ? this.serializeError(error, opts) : undefined,
       context: context,
 
@@ -298,6 +321,13 @@ export class StructuredLogger {
       custom: opts.customFields,
     }
 
+    // Track processing time
+    const processingTime = performance.now() - startTime
+    this.processingTimes.push(processingTime)
+    if (this.processingTimes.length > 100) {
+      this.processingTimes.shift()
+    }
+
     return this.excludeFields(entry, opts.excludeFields)
   }
 
@@ -309,15 +339,34 @@ export class StructuredLogger {
    * @returns {string} JSON string representation of the log entry.
    */
   serialize(entry: StructuredLogEntry, options: SerializationOptions = {}): string {
+    const startTime = performance.now()
     const opts = { ...this.defaultOptions, ...options }
 
     try {
       this.circularRefs.clear()
 
-      const serialized = this.serializeValue(entry, opts, 0)
+      // Apply field exclusion before serialization
+      const filteredEntry = this.excludeFields(entry, opts.excludeFields)
+      const serialized = this.serializeValue(filteredEntry, opts, 0)
+      const result = opts.pretty ? JSON.stringify(serialized, null, 2) : JSON.stringify(serialized)
 
-      return opts.pretty ? JSON.stringify(serialized, null, 2) : JSON.stringify(serialized)
+      // Track metrics
+      const serializationTime = performance.now() - startTime
+      this.totalEntries++
+      this.serializationTimes.push(serializationTime)
+      this.processingTimes.push(serializationTime)
+
+      // Keep only last 100 measurements for rolling average
+      if (this.serializationTimes.length > 100) {
+        this.serializationTimes.shift()
+      }
+      if (this.processingTimes.length > 100) {
+        this.processingTimes.shift()
+      }
+
+      return result
     } catch (error) {
+      this.errorCount++
       return this.createFallbackEntry(entry, error as Error)
     }
   }
@@ -422,6 +471,27 @@ export class StructuredLogger {
   }
 
   /**
+   * Sanitize data by applying security redaction rules
+   *
+   * @param {unknown} data - Data to sanitize.
+   * @param {SerializationOptions} options - Serialization options containing security rules.
+   * @returns {unknown} Sanitized data.
+   */
+  private sanitizeData(data: unknown, options: SerializationOptions): unknown {
+    this.circularRefs.clear()
+    try {
+      return this.serializeValue(data, options, 0)
+    } catch (error) {
+      // Handle circular references and other serialization errors gracefully
+      if (error instanceof CircularReferenceError) {
+        return '[CIRCULAR_REFERENCE_DETECTED]'
+      }
+      // For other errors, return a safe representation
+      return '[SANITIZATION_ERROR]'
+    }
+  }
+
+  /**
    * Serialize value with depth limit and circular reference detection
    *
    * @param {unknown} value - Value to serialize.
@@ -475,9 +545,11 @@ export class StructuredLogger {
    *
    * @param {unknown} value - Value to serialize.
    * @param {SerializationOptions} options - Serialization options.
-   * @returns {Required<SerializationOptions>} Normalized serialization options.
+   * @param {number} depth - Current depth in the serialization tree.
+   * @param {string} [keyPath] - Current key path for sensitive data detection.
+   * @returns {unknown} Serialized value.
    */
-  private serializeValue(value: unknown, options: SerializationOptions, depth: number): unknown {
+  private serializeValue(value: unknown, options: SerializationOptions, depth: number, keyPath = ''): unknown {
     if (depth > options.maxDepth!) {
       return '[MAX_DEPTH_EXCEEDED]'
     }
@@ -487,9 +559,11 @@ export class StructuredLogger {
     }
 
     if (typeof value === 'string') {
-      return value.length > options.maxStringLength!
-        ? value.slice(0, options.maxStringLength!) + '...[TRUNCATED]'
-        : value
+      // Check for sensitive data in strings
+      const sanitized = this.sanitizeSensitiveData(value, keyPath, options)
+      return sanitized.length > options.maxStringLength!
+        ? sanitized.slice(0, options.maxStringLength!) + '...[TRUNCATED]'
+        : sanitized
     }
 
     if (typeof value === 'number' || typeof value === 'boolean') {
@@ -510,7 +584,9 @@ export class StructuredLogger {
       try {
         if (Array.isArray(value)) {
           const maxLength = Math.min(value.length, options.maxArrayLength!)
-          const serialized = value.slice(0, maxLength).map((item) => this.serializeValue(item, options, depth + 1))
+          const serialized = value.slice(0, maxLength).map((item, index) =>
+            this.serializeValue(item, options, depth + 1, `${keyPath}[${index}]`)
+          )
 
           if (value.length > maxLength) {
             serialized.push(`...[${value.length - maxLength} more items]`)
@@ -521,7 +597,14 @@ export class StructuredLogger {
 
         const serialized: Record<string, unknown> = {}
         for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
-          serialized[key] = this.serializeValue(val, options, depth + 1)
+          const currentPath = keyPath ? `${keyPath}.${key}` : key
+
+          // Check if this key path should be redacted
+          if (this.isSensitiveField(currentPath, options)) {
+            serialized[key] = options.redactionPattern || '[REDACTED]'
+          } else {
+            serialized[key] = this.serializeValue(val, options, depth + 1, currentPath)
+          }
         }
 
         return serialized
@@ -531,6 +614,61 @@ export class StructuredLogger {
     }
 
     return String(value)
+  }
+
+  /**
+   * Check if a field path contains sensitive data
+   *
+   * @param {string} keyPath - The current key path
+   * @param {SerializationOptions} options - Serialization options
+   * @returns {boolean} True if the field is sensitive
+   */
+  private isSensitiveField(keyPath: string, options: SerializationOptions): boolean {
+    const sensitiveFields = options.sensitiveFields || this.defaultOptions.sensitiveFields
+    const lowerPath = keyPath.toLowerCase()
+
+    return sensitiveFields.some((field) =>
+      lowerPath.includes(field.toLowerCase()) ||
+      lowerPath.endsWith(field.toLowerCase())
+    )
+  }
+
+  /**
+   * Sanitize sensitive data from strings
+   *
+   * @param {string} value - The string value to sanitize
+   * @param {string} keyPath - The current key path
+   * @param {SerializationOptions} options - Serialization options
+   * @returns {string} Sanitized string
+   */
+  private sanitizeSensitiveData(value: string, keyPath: string, options: SerializationOptions): string {
+    // If the key path itself is sensitive, redact the entire value
+    if (this.isSensitiveField(keyPath, options)) {
+      return options.redactionPattern || '[REDACTED]'
+    }
+
+    // Apply common sensitive data patterns
+    let sanitized = value
+
+    // Credit card numbers (basic pattern)
+    sanitized = sanitized.replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[REDACTED-CC]')
+
+    // Social Security Numbers
+    sanitized = sanitized.replace(/\b\d{3}-\d{2}-\d{4}\b/g, '[REDACTED-SSN]')
+
+    // Bearer tokens
+    sanitized = sanitized.replace(/Bearer\s+[A-Za-z0-9\-_.]+/gi, 'Bearer [REDACTED]')
+
+    // API keys (basic pattern)
+    sanitized = sanitized.replace(/[A-Za-z0-9]{20,}/g, (match) => {
+      // Only redact if it looks like an API key (long alphanumeric string)
+      if (match.length >= 32 && /^[A-Za-z0-9]+$/.test(match)) {
+        return '[REDACTED-KEY]'
+      }
+      return match
+    })
+
+    return sanitized
   }
 
   /**
@@ -656,10 +794,9 @@ export class StructuredLogger {
    * @returns {Object} Metrics object containing total entries and error count.
    */
   getMetrics(): { totalEntries: number; errorCount: number } {
-    // Basic metrics implementation - in a real scenario this would track actual metrics
     return {
-      totalEntries: 0,
-      errorCount: 0,
+      totalEntries: this.totalEntries,
+      errorCount: this.errorCount,
     }
   }
 
@@ -669,11 +806,18 @@ export class StructuredLogger {
    * @returns {Object} Performance stats object.
    */
   getPerformanceStats(): { totalEntries: number; averageSerializationTime: number; averageProcessingTime: number } {
-    // Basic performance stats implementation
+    const avgSerializationTime = this.serializationTimes.length > 0
+      ? this.serializationTimes.reduce((sum, time) => sum + time, 0) / this.serializationTimes.length
+      : 0
+
+    const avgProcessingTime = this.processingTimes.length > 0
+      ? this.processingTimes.reduce((sum, time) => sum + time, 0) / this.processingTimes.length
+      : 0
+
     return {
-      totalEntries: 0,
-      averageSerializationTime: 0,
-      averageProcessingTime: 0,
+      totalEntries: this.totalEntries,
+      averageSerializationTime: avgSerializationTime,
+      averageProcessingTime: avgProcessingTime,
     }
   }
 }

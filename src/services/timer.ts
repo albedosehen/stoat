@@ -1,4 +1,5 @@
-import { type MemoryDelta, type PerformanceMetrics } from '../schema/performance/metrics.ts'
+import { type MemoryDelta } from '../types/memory.ts'
+import { type PerformanceMetrics } from '../types/metrics.ts'
 import { type StoatContext } from '../stoat/context.ts'
 
 /**

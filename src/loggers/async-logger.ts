@@ -3,7 +3,7 @@
  * @module
  */
 
-import type { LogLevelName } from '../types/schema.ts'
+import type { LogLevelName } from '../types/logLevels.ts'
 import type { StructuredLogEntry } from './structured-log-entry.ts'
 import { createErrorContext, PerformanceError } from '../errors/errors.ts'
 
@@ -113,6 +113,9 @@ export interface AsyncMetrics {
 
   /** Average processing time per log entry */
   averageProcessingTime: number
+
+  /** Total bytes buffered across all entries */
+  totalBytesBuffered: number
 }
 
 /**
@@ -188,6 +191,9 @@ export class AsyncLogger {
   private fastBufferSize = 0
   private syncMode = false
   private syncCallback?: (entry: StructuredLogEntry) => void
+  private exitHandler?: () => void
+  private signalListenersAdded = false
+  private retryTimeouts: Set<number> = new Set()
 
   constructor(config: AsyncConfig, syncCallback?: (entry: StructuredLogEntry) => void) {
     this.config = config
@@ -206,6 +212,7 @@ export class AsyncLogger {
       processed: 0,
       totalLogsProcessed: 0,
       averageProcessingTime: 0,
+      totalBytesBuffered: 0,
     }
 
     this.startFlushTimer()
@@ -265,9 +272,16 @@ export class AsyncLogger {
       if (this.syncCallback) {
         this.syncCallback(entry)
         this.metrics.syncFallbackEvents++
+        // Track metrics for sync entries (they're immediately processed)
+        this.metrics.entriesFlushed++
+        this.metrics.totalLogsProcessed++
+        this.metrics.processed++
       } else {
         // Fallback to console if no sync callback
         console.log(JSON.stringify(entry))
+        this.metrics.entriesFlushed++
+        this.metrics.totalLogsProcessed++
+        this.metrics.processed++
       }
     } catch (error) {
       this.metrics.errorCount++
@@ -292,8 +306,14 @@ export class AsyncLogger {
       this.fastBuffer[this.fastBufferSize] = entry
       this.fastBufferSize++
 
+      // Track metrics for fast path entries
+      this.metrics.entriesBuffered++
+      const entryBytes = this.estimateEntryBytes(entry)
+      this.metrics.totalBytesBuffered += entryBytes
+
       if (this.fastBufferSize > 800) {
-        this.flushFastBuffer()
+        // Use await-less flush for fast path
+        this.flushFastBuffer().catch(() => this.metrics.errorCount++)
       }
     } else {
       // Overflow, fallback to async logging
@@ -327,7 +347,7 @@ export class AsyncLogger {
       retryCount: 0,
     }
 
-    // Check buffer capacity
+    // Check buffer capacity before adding new entry
     if (this.buffer.length >= this.config.maxBufferSize) {
       if (this.config.enableBackpressure) {
         this.metrics.backpressureEvents++
@@ -337,13 +357,22 @@ export class AsyncLogger {
         const dropped = this.buffer.shift()
         if (dropped) {
           this.metrics.entriesDropped++
+          // Decrease buffered count for dropped entry
+          this.metrics.entriesBuffered = Math.max(0, this.metrics.entriesBuffered - 1)
+          // Also subtract bytes for dropped entries
+          const entryBytes = this.estimateEntryBytes(dropped.entry)
+          this.metrics.totalBytesBuffered = Math.max(0, this.metrics.totalBytesBuffered - entryBytes)
         }
       }
     }
 
-    // Entry priority handling
+    // Entry priority handling - add the new entry
     this.insertByPriority(bufferEntry)
     this.metrics.entriesBuffered++
+
+    // Estimate bytes for this entry and add to total
+    const entryBytes = this.estimateEntryBytes(bufferEntry.entry)
+    this.metrics.totalBytesBuffered += entryBytes
     this.updateMemoryUsage()
 
     // High priority entries trigger immediate flush
@@ -421,6 +450,42 @@ export class AsyncLogger {
     this.isDestroyed = true
     this.stopFlushTimer()
 
+    // Clear all retry timeouts
+    for (const timeoutId of this.retryTimeouts) {
+      clearTimeout(timeoutId)
+    }
+    this.retryTimeouts.clear()
+
+    // Remove signal listeners if they were added
+    if (this.signalListenersAdded && this.exitHandler && typeof Deno !== 'undefined') {
+      try {
+        Deno.removeSignalListener('SIGINT', this.exitHandler)
+        if (Deno.build.os !== 'windows') {
+          Deno.removeSignalListener('SIGTERM', this.exitHandler)
+        }
+      } catch {
+        // Ignore errors when removing signal listeners
+      }
+    }
+
+    // Remove browser event listeners
+    if (this.exitHandler && typeof globalThis.removeEventListener === 'function') {
+      try {
+        globalThis.removeEventListener('beforeunload', this.exitHandler)
+      } catch {
+        // Ignore errors when removing event listeners
+      }
+    }
+
+    // Wait for any ongoing flush operations to complete
+    if (this.flushPromise) {
+      try {
+        await this.flushPromise
+      } catch {
+        // Ignore flush errors during destruction
+      }
+    }
+
     // Final flush
     await this.flush()
 
@@ -441,8 +506,10 @@ export class AsyncLogger {
     // Use sync fallback when memory pressure is high
     const memoryThreshold = this.config.syncThreshold
     return this.syncMode ||
-      this.memoryUsage > memoryThreshold ||
-      this.buffer.length > this.config.bufferSize * 0.9
+      (this.config.syncFallback && (
+        this.memoryUsage > memoryThreshold ||
+        this.buffer.length > this.config.bufferSize * 0.9
+      ))
   }
 
   private shouldUseFastPath(entry: StructuredLogEntry): boolean {
@@ -456,17 +523,27 @@ export class AsyncLogger {
   private async handleBackpressure(): Promise<void> {
     // Strategy 1: Try immediate flush
     if (!this.isFlushing) {
-      await this.flush()
-      return
+      try {
+        await this.flush()
+        return
+      } catch {
+        // Flush failed, but still count as backpressure event
+        // Continue to strategy 3
+      }
     }
 
     // Strategy 2: Wait for current flush to complete
     if (this.flushPromise) {
-      await this.flushPromise
-      return
+      try {
+        await this.flushPromise
+        return
+      } catch {
+        // Flush failed, but still count as backpressure event
+        // Continue to strategy 3
+      }
     }
 
-    // Strategy 3: Drop lower priority entries
+    // Strategy 3: Drop lower priority entries when flush fails
     this.dropLowPriorityEntries()
   }
 
@@ -500,8 +577,19 @@ export class AsyncLogger {
    */
   private dropLowPriorityEntries(): void {
     const originalLength = this.buffer.length
+    const droppedEntries = this.buffer.filter((entry) => entry.priority < 40) // Get entries to drop
     this.buffer = this.buffer.filter((entry) => entry.priority >= 40) // Keep warn+ only
-    this.metrics.entriesDropped += originalLength - this.buffer.length
+
+    const droppedCount = originalLength - this.buffer.length
+    this.metrics.entriesDropped += droppedCount
+    // Decrease buffered count by the number of dropped entries
+    this.metrics.entriesBuffered = Math.max(0, this.metrics.entriesBuffered - droppedCount)
+
+    // Also subtract bytes for dropped entries
+    for (const droppedEntry of droppedEntries) {
+      const entryBytes = this.estimateEntryBytes(droppedEntry.entry)
+      this.metrics.totalBytesBuffered = Math.max(0, this.metrics.totalBytesBuffered - entryBytes)
+    }
   }
 
   private async performFlush(): Promise<void> {
@@ -566,6 +654,9 @@ export class AsyncLogger {
     }))
 
     await this.flushBatch(bufferEntries)
+
+    // Note: flushBatch already decrements entriesBuffered and increments entriesFlushed
+    // No additional metric updates needed here
   }
 
   /**
@@ -579,18 +670,43 @@ export class AsyncLogger {
       try {
         if (this.syncCallback) {
           this.syncCallback(bufferEntry.entry)
-          this.metrics.entriesFlushed++
+        } else {
+          // Fallback to console if no sync callback
+          console.log(JSON.stringify(bufferEntry.entry))
         }
+
+        // Track successful flush
+        this.metrics.entriesFlushed++
+        this.metrics.totalLogsProcessed++
+        this.metrics.processed++
+        // Decrement buffered count when successfully flushed
+        this.metrics.entriesBuffered = Math.max(0, this.metrics.entriesBuffered - 1)
+
+        // Subtract bytes from total when entry is flushed
+        const entryBytes = this.estimateEntryBytes(bufferEntry.entry)
+        this.metrics.totalBytesBuffered = Math.max(0, this.metrics.totalBytesBuffered - entryBytes)
       } catch (_error) {
+        // Increment error count immediately when sync callback fails
+        this.metrics.errorCount++
+
         // Retry logic for failed entries
         if (bufferEntry.retryCount < this.config.maxRetries) {
           bufferEntry.retryCount++
-          setTimeout(() => {
+          const timeoutId = setTimeout(() => {
+            this.retryTimeouts.delete(timeoutId)
             this.buffer.unshift(bufferEntry) // Add back to front for retry
+            // Re-increment buffered count for retry
+            this.metrics.entriesBuffered++
           }, this.config.retryDelay)
+          this.retryTimeouts.add(timeoutId)
         } else {
           this.metrics.entriesDropped++
-          this.metrics.errorCount++
+          // Decrement buffered count for dropped entry
+          this.metrics.entriesBuffered = Math.max(0, this.metrics.entriesBuffered - 1)
+
+          // Also subtract bytes for dropped entries
+          const entryBytes = this.estimateEntryBytes(bufferEntry.entry)
+          this.metrics.totalBytesBuffered = Math.max(0, this.metrics.totalBytesBuffered - entryBytes)
         }
       }
     }
@@ -666,7 +782,7 @@ export class AsyncLogger {
   private setupExitHandlers(): void {
     if (this.config.syncOnExit) {
       // Handle graceful shutdown
-      const exitHandler = () => {
+      this.exitHandler = () => {
         this.destroy().catch(() => {
           // Best effort cleanup
         })
@@ -674,18 +790,36 @@ export class AsyncLogger {
 
       // Deno-specific exit handling
       if (typeof Deno !== 'undefined') {
-        Deno.addSignalListener('SIGINT', exitHandler)
+        Deno.addSignalListener('SIGINT', this.exitHandler)
 
         // SIGTERM is not supported on Windows, only add on non-Windows platforms
         if (Deno.build.os !== 'windows') {
-          Deno.addSignalListener('SIGTERM', exitHandler)
+          Deno.addSignalListener('SIGTERM', this.exitHandler)
         }
+        this.signalListenersAdded = true
       }
 
       // Browser/universal exit handling
       if (typeof globalThis.addEventListener === 'function') {
-        globalThis.addEventListener('beforeunload', exitHandler)
+        globalThis.addEventListener('beforeunload', this.exitHandler)
       }
+    }
+  }
+
+  /**
+   * Estimate bytes for a log entry
+   *
+   * @param {StructuredLogEntry} entry - The log entry to estimate bytes for
+   * @returns {number} - Estimated bytes for the entry
+   * @private
+   */
+  private estimateEntryBytes(entry: StructuredLogEntry): number {
+    try {
+      // Rough estimation based on JSON string length
+      return JSON.stringify(entry).length * 2 // 2 bytes per character (UTF-16)
+    } catch {
+      // Fallback estimation if JSON.stringify fails
+      return 512 // Default 512 bytes
     }
   }
 

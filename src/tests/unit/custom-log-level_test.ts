@@ -10,8 +10,8 @@ import {
   type LevelFilter,
   LogLevelManager,
   type TimeBasedFilter,
-} from '../../types/levels.ts'
-import { LOG_LEVEL_VALUES } from '../../types/schema.ts'
+} from '../../services/mod.ts'
+import { LOG_LEVEL_VALUES } from '../../types/logLevels.ts'
 
 describe('Custom Level Management System', () => {
   let levelManager: LogLevelManager

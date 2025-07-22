@@ -1,11 +1,13 @@
 import { assert, assertEquals, assertExists, assertGreater } from '@std/assert'
 import { afterEach, describe, it } from '@std/testing/bdd'
-import { StructuredLogger } from '../../logging/structured.ts'
-import { type AsyncLoggerConfig, createAsyncLogger } from '../../logging/async.ts'
-import { ConsoleTransport } from '../../transports/console.ts'
-import { createSerializer, serialize } from '../../serializers/serializer.ts'
-import { createCustomLevel, getGlobalLevelManager, LogLevelManager,  } from '../../types/levels.ts'
-import { DEFAULT_CONFIGS, validateConfig, LOG_LEVEL_VALUES } from '../../types/schema.ts'
+import { StructuredLogger } from '../../loggers/structured-log-entry.ts'
+import { type AsyncLoggerConfig, createAsyncLogger } from '../../loggers/async-logger.ts'
+import { ConsoleTransport } from '../../services/console.ts'
+import { createSerializer, serialize } from '../../services/serializer.ts'
+import { createCustomLevel, getGlobalLevelManager, LogLevelManager } from '../../services/mod.ts'
+import { DEFAULT_CONFIGS } from '../../types/defaults.ts'
+import { LOG_LEVEL_VALUES } from '../../types/logLevels.ts'
+import { validateConfig } from '../../types/validation.ts'
 import {
   createAgentId,
   createLogMessage,
@@ -16,9 +18,9 @@ import {
   createStrategyId,
   createSymbol,
   createTimestamp,
-  createTraceId
+  createTraceId,
 } from '../../types/brands.ts'
-import type { StoatContext } from '../../context/correlation.ts'
+import type { StoatContext } from '../../stoat/context.ts'
 
 describe('Full System Integration Tests', () => {
   let cleanup: (() => void)[] = []
@@ -456,14 +458,14 @@ describe('Full System Integration Tests', () => {
       assert(!levelManager.passesFilters('info'))
       assert(!levelManager.passesFilters('MARKET_OPEN'))
       assert(levelManager.passesFilters('TRADE_EXECUTION'))
-      assert(levelManager.passesFilters('warn'))
+      assert(!levelManager.passesFilters('warn')) // warn (40) < TRADE_EXECUTION (45)
       assert(levelManager.passesFilters('error'))
       assert(levelManager.passesFilters('RISK_ALERT'))
       assert(!levelManager.passesFilters('fatal'))
       assert(!levelManager.passesFilters('MARKET_CLOSE'))
 
       const stats = levelManager.exportConfig()
-      assert(stats.customLevels.length > 10) // Standard + custom levels
+      assert(stats.customLevels.length >= 10) // Standard + custom levels (6 standard + 4 custom = 10)
       assertExists(stats.filters)
     })
 

@@ -7,11 +7,11 @@ import { stoat } from '../mod.ts'
 import {
   createAsyncLogger,
   ASYNC_CONFIGS,
-} from '../src/logging/async.ts'
+} from '../src/loggers/async-logger.ts'
 import {
   createStructuredLogger,
   type StructuredLogEntry
-} from '../src/logging/structured.ts'
+} from '../src/loggers/structured-log-entry.ts'
 import {
   createSymbol
 } from '../src/types/brands.ts'
@@ -45,7 +45,7 @@ await basicAsyncLogger.flush()
 logger.info('---')
 logger.info('2. High-Frequency Trading Async Logging')
 
-const hftAsyncLogger = createAsyncLogger(ASYNC_CONFIGS.trading, (entry) => {
+const hftAsyncLogger = createAsyncLogger(ASYNC_CONFIGS.trading, (entry: StructuredLogEntry) => {
   outputLogger.info(`[HFT] ${entry.level}: ${entry.message}`)
 })
 
@@ -120,7 +120,7 @@ const customConfig = {
   syncThreshold: 10 * 1024 * 1024 // 10MB
 }
 
-const customAsyncLogger = createAsyncLogger(customConfig, (entry) => {
+const customAsyncLogger = createAsyncLogger(customConfig, (entry: StructuredLogEntry) => {
   outputLogger.info(`[CUSTOM] ${entry.level.toUpperCase()}: ${entry.message}`)
 })
 
@@ -147,7 +147,7 @@ await customAsyncLogger.flush()
 logger.info('---')
 logger.info('5. Sync Mode Fallback')
 
-const fallbackLogger = createAsyncLogger(ASYNC_CONFIGS.web, (entry) => {
+const fallbackLogger = createAsyncLogger(ASYNC_CONFIGS.web, (entry: StructuredLogEntry) => {
   outputLogger.info(`[FALLBACK] ${entry.level}: ${entry.message}`)
 })
 
@@ -176,7 +176,7 @@ const batchLogger = createAsyncLogger({
   ...ASYNC_CONFIGS.web,
   batchSize: 3, // Small batch for demo
   flushInterval: 100
-}, (entry) => {
+}, (entry: StructuredLogEntry) => {
   outputLogger.info(`[BATCH] ${entry.level}: ${entry.message}`)
 })
 
@@ -197,7 +197,7 @@ await batchLogger.flush()
 logger.info('---')
 logger.info('7. Runtime Configuration Updates')
 
-const runtimeLogger = createAsyncLogger(ASYNC_CONFIGS.development, (entry) => {
+const runtimeLogger = createAsyncLogger(ASYNC_CONFIGS.development, (entry: StructuredLogEntry) => {
   outputLogger.info(`[RUNTIME] ${entry.level}: ${entry.message}`)
 })
 

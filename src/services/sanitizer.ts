@@ -3,7 +3,7 @@
  * @module
  */
 import type { RedactedData, SanitizedInput } from '../types/brands.ts'
-import type { SecurityConfig } from '../types/schema.ts'
+import type { SecurityConfig } from '../types/config.ts'
 import { createErrorContext, DataRedactionError, InputSanitizationError, SecurityError } from '../errors/errors.ts'
 
 /**
@@ -143,7 +143,7 @@ export class InputSanitizer {
   }
 
   private initializeCustomPatterns(): void {
-    for (const pattern of this.config.redactPatterns) {
+    for (const pattern of this.config.redactPatterns ?? []) {
       try {
         const regex = new RegExp(pattern, 'gi')
         this.customPatterns.set(pattern, regex)
@@ -168,7 +168,7 @@ export class InputSanitizer {
     try {
       let sanitized = input
 
-      const maxLength = options.maxLength ?? this.config.maxStringLength
+      const maxLength = options.maxLength ?? this.config.maxStringLength ?? 1000
       if (sanitized.length > maxLength) {
         sanitized = sanitized.slice(0, maxLength) + '...[TRUNCATED]'
       }
@@ -290,7 +290,7 @@ export class InputSanitizer {
     const redactPaths = options.paths ?? this.config.redactPaths
 
     for (const [key, value] of Object.entries(obj)) {
-      const shouldRedactKey = redactPaths.some((path) => key.toLowerCase().includes(path.toLowerCase()))
+      const shouldRedactKey = redactPaths?.some((path) => key.toLowerCase().includes(path.toLowerCase())) ?? false
 
       if (shouldRedactKey) {
         result[key] = '[REDACTED]'
@@ -371,7 +371,7 @@ export class InputSanitizer {
   validate(input: string): { isValid: boolean; issues: string[] } {
     const issues: string[] = []
 
-    if (input.length > this.config.maxStringLength) {
+    if (this.config.maxStringLength && input.length > this.config.maxStringLength) {
       issues.push(`Input exceeds maximum length (${this.config.maxStringLength})`)
     }
 

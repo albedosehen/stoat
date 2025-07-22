@@ -1,10 +1,11 @@
 import { assert, assertEquals, assertExists, assertStringIncludes } from '@std/assert'
 import { afterEach, beforeEach, describe, it } from '@std/testing/bdd'
 import { assertSpyCalls, spy, stub } from '@std/testing/mock'
-import { stoat } from '../../core/stoat.ts'
-import { Timer } from '../../core/timer.ts'
+import { stoat } from '../../stoat/stoat.ts'
+import { Timer } from '../../services/timer.ts'
 import { DEFAULT_STOAT_CONFIG, type StoatConfig } from '../../stoat/config.ts'
 import { LOG_LEVEL } from '../../types/log.ts'
+import { createRequestId } from '../../types/brands.ts'
 
 const originalConsole = {
   debug: console.debug,
@@ -870,7 +871,7 @@ describe('STOAT Logger - Comprehensive Test Suite', () => {
         strategy: 'momentum',
         agentId: 'agent-456',
         portfolioId: 'portfolio-789',
-        requestId: 'req-abc',
+        requestId: createRequestId('req-abc'),
       })
 
       contextLogger.info('Full context test')
@@ -1345,7 +1346,7 @@ describe('STOAT Logger - Comprehensive Test Suite', () => {
 
         // Use existing context fields and add modern correlation via metadata
         const childWithModernContext = testLogger.child({
-          requestId: 'req-modern-789',
+          requestId: createRequestId('req-modern-789'),
           metadata: {
             traceId: 'trace-modern-123',
             spanId: 'span-modern-456',

@@ -8,7 +8,7 @@ import {
   serialize,
   serializeFast,
   type SerializerConfig,
-} from '../../serializers/serializer.ts'
+} from '../../services/serializer.ts'
 import { createOrderId, createSymbol, createTraceId } from '../../types/brands.ts'
 
 describe('Custom Serializer System', () => {
@@ -489,7 +489,7 @@ describe('Custom Serializer System', () => {
     it('should add custom serializers', () => {
       const customSerializer: CustomSerializer = (value: unknown) => ({
         __type: 'custom',
-        value: String(value),
+        value: typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value),
         serializedBy: 'customSerializer',
       })
 

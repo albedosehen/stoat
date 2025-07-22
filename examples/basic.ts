@@ -4,6 +4,7 @@
  */
 
 import { stoat } from '../mod.ts'
+import { createRequestId } from '../src/types/brands.ts'
 
 // Create a main logger for the examples themselves
 const exampleLogger = stoat.create({
@@ -71,12 +72,12 @@ const parentLogger = stoat.create({
 // Child inherits parent configuration
 const childLogger = parentLogger.child({
   agentId: 'auth-handler',
-  requestId: 'user-12345'
+  requestId: createRequestId('user-12345')
 })
 
 const grandchildLogger = childLogger.child({
   strategy: 'login-flow',
-  requestId: 'req-abc-123'
+  requestId: createRequestId('req-abc-123')
 })
 
 parentLogger.info('Parent logger message')

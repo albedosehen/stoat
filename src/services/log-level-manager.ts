@@ -5,8 +5,8 @@
  * @module
  */
 
-import type { LogLevelName } from '../types/schema.ts'
-import { LOG_LEVEL_NAMES, LOG_LEVEL_VALUES } from '../types/schema.ts'
+import type { LogLevelName } from '../types/logLevels.ts'
+import { LOG_LEVEL_NAMES, LOG_LEVEL_VALUES } from '../types/logLevels.ts'
 import { createErrorContext, ValidationError } from '../errors/errors.ts'
 
 /**

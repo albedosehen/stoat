@@ -4,6 +4,7 @@
  */
 
 import { stoat } from '../mod.ts'
+import { createRequestId } from '../src/types/brands.ts'
 
 const mainLogger = stoat.create({
   level: 'info',
@@ -43,17 +44,17 @@ const appLogger = stoat.create({
 
 const authLogger = appLogger.child({
   module: 'auth-component',
-  requestId: 'req-auth-001'
+  requestId: createRequestId('req-auth-001')
 })
 
 const dbLogger = appLogger.child({
-  module: 'database-component', 
-  requestId: 'req-db-001'
+  module: 'database-component',
+  requestId: createRequestId('req-db-001')
 })
 
 const apiLogger = appLogger.child({
   module: 'api-component',
-  requestId: 'req-api-001'
+  requestId: createRequestId('req-api-001')
 })
 
 authLogger.debug('Validating user credentials')
@@ -208,7 +209,7 @@ const tracingLogger = stoat.create({
 
 async function simulateRequest(requestId: string) {
   const requestLogger = tracingLogger.child({
-    requestId,
+    requestId: createRequestId(requestId),
     agentId: 'request-handler'
   })
 

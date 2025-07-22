@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.0] - 2025-07-21
+
+### Update
+
+- Removed nodejs libraries from `stoat` package to reduce size and complexity.
+- Refactored project structure to improve maintainability and improve clarity.
+- Removed left-over code from previous iterations.
+- Updated exports for proper module resolution.
+
+---
+
 ## [0.0.1] - 2025-07-20
 
 ### 🐹 Initial Release

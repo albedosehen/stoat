@@ -5,13 +5,13 @@
  */
 
 import {
+  type AgentId,
   createOperationId,
   createRequestId,
   createSessionId,
   createSpanId,
   createTimestamp,
   createTraceId,
-  type AgentId,
   type OperationId,
   type OrderId,
   type PortfolioId,
@@ -23,7 +23,7 @@ import {
   type Timestamp,
   type TraceId,
 } from '../types/brands.ts'
-import type { ContextConfig } from '../types/schema.ts'
+import type { ContextConfig } from '../types/config.ts'
 import { createErrorContext, ValidationError } from '../errors/errors.ts'
 
 // Base context interface with correlation and observability fields
@@ -412,7 +412,7 @@ export class ContextManager {
 
     // Check context size
     const contextStr = JSON.stringify(context)
-    if (contextStr.length > this.config.maxContextSize) {
+    if (this.config.maxContextSize && contextStr.length > this.config.maxContextSize) {
       throw new ValidationError(
         `Context size exceeds maximum (${this.config.maxContextSize})`,
         createErrorContext({ component: 'context' }),
@@ -436,7 +436,7 @@ export class ContextManager {
   }
 
   private generateSessionId(): SessionId {
-    const length = this.config.sessionIdLength
+    const length = this.config.sessionIdLength ?? 8
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
     let result = ''
     for (let i = 0; i < length; i++) {

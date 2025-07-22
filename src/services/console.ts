@@ -5,9 +5,9 @@
  */
 
 import type { WriteResult } from './transport.ts'
-import type { StructuredLogEntry } from '../logging/structured.ts'
-import type { StoatContext } from '../context/correlation.ts'
-import type { LogLevelName } from '../types/schema.ts'
+import type { StructuredLogEntry } from '../loggers/structured-log-entry.ts'
+import type { StoatContext } from '../stoat/context.ts'
+import type { LogLevelName } from '../types/logLevels.ts'
 import { BaseTransport, type BaseTransportConfig, TransportWriteError } from './transport.ts'
 
 /**
@@ -86,15 +86,25 @@ export class ConsoleTransport extends BaseTransport {
   }
 
   /**
+   * Override format entry to handle pretty print mode
+   */
+  protected override _formatEntry(entry: StructuredLogEntry, _context?: StoatContext): string {
+    const config = this.config as ConsoleTransportConfig
+
+    if (config.prettyPrint) {
+      return this._formatPretty(entry) + '\n'
+    } else if (config.format === 'json') {
+      return JSON.stringify(entry) + '\n'
+    } else {
+      return this._formatAsText(entry) + '\n'
+    }
+  }
+
+  /**
    * Custom formatting for console output
    */
   protected override _customFormat(entry: StructuredLogEntry): string {
-    const config = this.config as ConsoleTransportConfig
-    if (config.prettyPrint) {
-      return this._formatPretty(entry)
-    } else {
-      return this._formatCompact(entry)
-    }
+    return this._formatCompact(entry)
   }
 
   /**
@@ -184,10 +194,12 @@ export class ConsoleTransport extends BaseTransport {
     // Error information
     if (entry.error) {
       lines.push(`${grayColor}│ Error: ${levelColor}${entry.error.name}: ${entry.error.message}${resetColor}`)
-      if (entry.error.stack && this.config.format !== 'text') {
-        const stackLines = entry.error.stack.split('\n').slice(0, 5) // Limit stack trace
+      if (entry.error.stack) {
+        const stackLines = entry.error.stack.split('\n').slice(1) // Skip the first line (error message)
         for (const stackLine of stackLines) {
-          lines.push(`${grayColor}│   ${resetColor}${stackLine.trim()}`)
+          if (stackLine.trim()) {
+            lines.push(`${grayColor}│   ${resetColor}${stackLine.trim()}`)
+          }
         }
       }
     }
@@ -299,22 +311,22 @@ export class ConsoleTransport extends BaseTransport {
    * @returns {Promise<WriteResult[]>} - Promise resolving to an array of write results for each entry.
    */
   override async writeBatch(entries: StructuredLogEntry[], context?: StoatContext): Promise<WriteResult[]> {
-    // For console, we can optimize by batching the output
-    const formatted = entries
-      .filter((entry) => this.canWrite(entry.level))
-      .map((entry) => this._formatEntry(entry, context))
+    // Filter entries that can be written
+    const writableEntries = entries.filter((entry) => this.canWrite(entry.level))
 
-    if (formatted.length === 0) {
+    if (writableEntries.length === 0) {
       return []
     }
 
+    // Format the writable entries
+    const formatted = writableEntries.map((entry) => this._formatEntry(entry, context))
     const batchOutput = formatted.join('')
     const result = await this._doWrite(batchOutput)
 
-    // Return individual results (all same since we batched)
-    return entries.map(() => ({
+    // Return individual results only for writable entries
+    return writableEntries.map(() => ({
       ...result,
-      bytesWritten: result.bytesWritten ? Math.floor(result.bytesWritten / entries.length) : 0,
+      bytesWritten: result.bytesWritten ? Math.floor(result.bytesWritten / writableEntries.length) : 0,
     }))
   }
 }

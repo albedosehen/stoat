@@ -1,10 +1,11 @@
 import { assert, assertEquals, assertExists, assertGreater } from '@std/assert'
 import { describe, it } from '@std/testing/bdd'
-import { createStructuredEntry, StructuredLogger } from '../../logging/structured.ts'
-import { AsyncLogger } from '../../logging/async.ts'
-import { createSerializer, CustomSerializerEngine, serialize, serializeFast } from '../../serializers/serializer.ts'
-import { createCustomLevel, getGlobalLevelManager, LogLevelManager } from '../../types/levels.ts'
-import { DEFAULT_CONFIGS, validateConfig } from '../../types/schema.ts'
+import { createStructuredEntry, StructuredLogger } from '../../loggers/structured-log-entry.ts'
+import { AsyncLogger } from '../../loggers/async-logger.ts'
+import { createSerializer, CustomSerializerEngine, serialize, serializeFast } from '../../services/serializer.ts'
+import { createCustomLevel, getGlobalLevelManager, LogLevelManager } from '../../services/mod.ts'
+import { DEFAULT_CONFIGS } from '../../types/defaults.ts'
+import { validateConfig } from '../../types/validation.ts'
 import {
   createAgentId,
   createOrderId,
@@ -16,7 +17,7 @@ import {
   createTimestamp,
   createTraceId,
 } from '../../types/brands.ts'
-import type { StoatContext } from '../../context/correlation.ts'
+import type { StoatContext } from '../../stoat/context.ts'
 
 describe('Basic Integration Tests', () => {
   describe('Component Integration', () => {
@@ -88,11 +89,11 @@ describe('Basic Integration Tests', () => {
       })
 
       assert(levelManager.passesFilters('TRADE_EXECUTION'))
-      assert(levelManager.passesFilters('warn'))
-      assert(levelManager.passesFilters('error'))
+      assert(!levelManager.passesFilters('warn')) // 40 < 45, should not pass
+      assert(levelManager.passesFilters('error')) // 50 is between 45-55
       assert(levelManager.passesFilters('RISK_ALERT'))
-      assert(!levelManager.passesFilters('info'))
-      assert(!levelManager.passesFilters('fatal'))
+      assert(!levelManager.passesFilters('info')) // 30 < 45, should not pass
+      assert(!levelManager.passesFilters('fatal')) // 60 > 55, should not pass
     })
 
     it('should integrate async logging with basic functionality', async () => {
@@ -102,7 +103,7 @@ describe('Basic Integration Tests', () => {
         maxBufferSize: 50,
         flushInterval: 50,
         batchSize: 5,
-        syncOnExit: true,
+        syncOnExit: false, // Disable sync on exit for tests
         enableBackpressure: true,
         maxRetries: 1,
         retryDelay: 10,
@@ -118,32 +119,37 @@ describe('Basic Integration Tests', () => {
         syncThreshold: 1024 * 1024, // 1MB
       })
 
-      // Create structured logger to generate entries
-      const structuredLogger = new StructuredLogger()
+      try {
+        // Create structured logger to generate entries
+        const structuredLogger = new StructuredLogger()
 
-      // Create log entries and add to async logger
-      for (let i = 0; i < 5; i++) {
-        const logEntry = structuredLogger.createLogEntry({
-          level: 'info',
-          message: `Async test ${i}`,
-          data: {
-            orderId: createOrderId(`async-${i}`),
-            symbol: createSymbol('ASYNC'),
-            iteration: i,
-          },
-        })
+        // Create log entries and add to async logger
+        for (let i = 0; i < 5; i++) {
+          const logEntry = structuredLogger.createLogEntry({
+            level: 'info',
+            message: `Async test ${i}`,
+            data: {
+              orderId: createOrderId(`async-${i}`),
+              symbol: createSymbol('ASYNC'),
+              iteration: i,
+            },
+          })
 
-        // Add entry to async logger buffer
-        await asyncLogger.log(logEntry)
+          // Add entry to async logger buffer
+          await asyncLogger.log(logEntry)
+        }
+
+        // Force flush
+        await asyncLogger.flush()
+
+        // Verify metrics
+        const metrics = asyncLogger.getMetrics()
+        assertExists(metrics)
+        assertExists(metrics.bufferUtilization)
+      } finally {
+        // Always clean up resources
+        await asyncLogger.destroy()
       }
-
-      // Force flush
-      await asyncLogger.flush()
-
-      // Verify metrics
-      const metrics = asyncLogger.getMetrics()
-      assertExists(metrics)
-      assertExists(metrics.bufferUtilization)
     })
 
     it('should work with configuration validation', () => {

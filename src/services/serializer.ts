@@ -288,6 +288,11 @@ export class CustomSerializerEngine {
 
     const type = typeof value
     if (type === 'string') {
+      // Check for branded types before general string serialization
+      const customSerializer = this.getCustomSerializerForValue(value as string)
+      if (customSerializer) {
+        return customSerializer(value, context)
+      }
       return this.serializeString(value as string, context)
     }
 
@@ -361,12 +366,6 @@ export class CustomSerializerEngine {
       }))
     }
 
-    // Check for custom serializers
-    const customSerializer = this.getCustomSerializer(obj)
-    if (customSerializer) {
-      return customSerializer(obj, context)
-    }
-
     // Handle built-in types
     if (obj instanceof Date) {
       return obj.toISOString()
@@ -398,6 +397,12 @@ export class CustomSerializerEngine {
 
     if (Array.isArray(obj)) {
       return this.serializeArray(obj, context)
+    }
+
+    // Check for custom serializers on plain objects
+    const customSerializer = this.getCustomSerializer(obj)
+    if (customSerializer) {
+      return customSerializer(obj, context)
     }
 
     // Handle plain objects
@@ -628,6 +633,45 @@ export class CustomSerializerEngine {
   }
 
   /**
+   * Get custom serializer for string value (branded types)
+   *
+   * @param {string} value - The string value to check for a custom serializer
+   * @returns {CustomSerializer | undefined} - The custom serializer function if found, otherwise
+   * undefined
+   * @private
+   */
+  private getCustomSerializerForValue(value: string): CustomSerializer | undefined {
+    // Check for trading-specific patterns that indicate branded types
+
+    // OrderId pattern: 'order-...'
+    if (value.startsWith('order-')) {
+      return this.customSerializers.get('OrderId')
+    }
+
+    // TraceId pattern: 'trace-...'
+    if (value.startsWith('trace-')) {
+      return this.customSerializers.get('TraceId')
+    }
+
+    // SpanId pattern: 'span-...'
+    if (value.startsWith('span-')) {
+      return this.customSerializers.get('SpanId')
+    }
+
+    // StrategyId pattern: strategy names (often with hyphens and versions)
+    if (value.includes('-') && (value.includes('strategy') || value.includes('v') || /^[a-z]+-[a-z0-9]+/.test(value))) {
+      return this.customSerializers.get('StrategyId')
+    }
+
+    // Symbol pattern: typically 2-5 uppercase letters
+    if (/^[A-Z]{2,5}$/.test(value)) {
+      return this.customSerializers.get('Symbol')
+    }
+
+    return undefined
+  }
+
+  /**
    * Get custom serializer for object type
    *
    * @param {object} obj - The object to check for a custom serializer
@@ -636,10 +680,32 @@ export class CustomSerializerEngine {
    * @private
    */
   private getCustomSerializer(obj: object): CustomSerializer | undefined {
+    // First try constructor name
     const constructor = obj.constructor
     if (constructor && constructor.name) {
-      return this.customSerializers.get(constructor.name)
+      const serializer = this.customSerializers.get(constructor.name)
+      if (serializer) {
+        return serializer
+      }
     }
+
+    // Check for portfolio-like objects (for trading systems)
+    const objAsRecord = obj as Record<string, unknown>
+    if (objAsRecord.positions && objAsRecord.totalValue !== undefined && objAsRecord.cash !== undefined) {
+      const portfolioSerializer = this.customSerializers.get('Portfolio')
+      if (portfolioSerializer) {
+        return portfolioSerializer
+      }
+    }
+
+    // Check for position-like objects
+    if (objAsRecord.quantity !== undefined && objAsRecord.avgPrice !== undefined && objAsRecord.symbol) {
+      const positionSerializer = this.customSerializers.get('Position')
+      if (positionSerializer) {
+        return positionSerializer
+      }
+    }
+
     return undefined
   }
 
@@ -667,6 +733,11 @@ export class CustomSerializerEngine {
 
     this.addCustomSerializer('SpanId', (value: unknown) => ({
       __type: 'spanId',
+      value: String(value),
+    }))
+
+    this.addCustomSerializer('StrategyId', (value: unknown) => ({
+      __type: 'strategyId',
       value: String(value),
     }))
 

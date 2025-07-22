@@ -2,43 +2,26 @@
 	"lock": true,
 
 	"name": "@albedosehen/stoat",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"license": "MIT",
 	"exports": {
-		".": "./mod.ts",
-		"./structured": "./src/logging/structured.ts",
-		"./async": "./src/logging/async.ts",
-		"./transports": "./src/transports/mod.ts",
-		"./serializers": "./src/serializers/mod.ts",
-		"./security": "./src/security/mod.ts",
-		"./types": "./src/types/mod.ts",
-		"./config": "./src/config/mod.ts"
+		".": "./mod.ts"
 	},
 
 	"tasks": {
 		"test": "deno test --allow-read --allow-write --allow-net --allow-sys -q",
 		"test:watch": "deno test --allow-read --allow-write --allow-net --allow-sys --watch -q",
 		"test:coverage": "deno test --allow-read --allow-write --allow-net --allow-sys --coverage=coverage/ -q",
-		"test:unit": "deno test src/ --allow-read --allow-write --allow-net --allow-sys -q",
-		"test:integration": "deno test src/integration/ --allow-read --allow-write --allow-net --allow-sys -q",
-		"test:structured": "deno test src/logging/structured_test.ts --allow-read --allow-write -q",
-		"test:async": "deno test src/logging/async_test.ts --allow-read --allow-write -q",
-		"test:serializers": "deno test src/serializers/ --allow-read --allow-write -q",
-		"test:transports": "deno test src/transports/ --allow-read --allow-write -q",
-		"test:security": "deno test src/security/ --allow-read --allow-write -q",
-		"test:performance": "deno test src/ --filter='performance' --allow-read --allow-write --allow-net --allow-sys -q",
+		"test:unit": "deno test src/tests/unit --allow-read --allow-write --allow-net --allow-sys -q",
+		"test:integration": "deno test src/tests/integration/ --allow-read --allow-write --allow-net --allow-sys -q",
 		"coverage": "deno coverage coverage/ --html",
 		"coverage:lcov": "deno coverage coverage/ --lcov --output=coverage.lcov",
 		"bench": "deno bench --allow-read --allow-write --allow-net --allow-sys",
-		"bench:async": "deno bench src/logging/async_bench.ts --allow-read --allow-write",
-		"bench:structured": "deno bench src/logging/structured_bench.ts --allow-read --allow-write",
-		"bench:serializers": "deno bench src/serializers/ --allow-read --allow-write",
-		"dev": "deno run --allow-read --allow-write --allow-net --allow-sys --watch examples/dev.ts",
 		"example:basic": "deno run --allow-read --allow-write examples/basic.ts",
 		"example:structured": "deno run --allow-read --allow-write examples/structured.ts",
 		"example:async": "deno run --allow-read --allow-write examples/async.ts",
 		"example:trading": "deno run --allow-read --allow-write examples/trading.ts",
-		"check": "deno check mod.ts src/**/*.ts",
+		"check": "deno check mod.ts src/",
 		"lint": "deno lint",
 		"fmt": "deno fmt",
 		"fmt:check": "deno fmt --check"
@@ -95,9 +78,7 @@
 		"@std/testing/bdd": "jsr:@std/testing@^1.0.0/bdd",
 		"@std/testing/mock": "jsr:@std/testing@^1.0.0/mock",
 		"@std/streams": "jsr:@std/streams@^1.0.0",
-		"@std/async": "jsr:@std/async@^1.0.0",
-		"zod": "npm:zod@^3.23.0",
-		"@zod/core": "npm:@zod/core@0.11.6"
+		"@std/async": "jsr:@std/async@^1.0.0"
 	},
 
 	"exclude": ["dist/"]

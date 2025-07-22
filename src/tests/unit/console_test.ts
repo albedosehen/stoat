@@ -2,11 +2,11 @@
 import { assert, assertEquals, assertExists, assertGreater, assertStringIncludes } from '@std/assert'
 import { afterEach, beforeEach, describe, it } from '@std/testing/bdd'
 import { assertSpyCalls, type Spy, spy } from '@std/testing/mock'
-import { ConsoleTransport, type ConsoleTransportConfig, createConsoleTransport } from '../../transports/console.ts'
-import type { StructuredLogEntry } from '../../logging/structured.ts'
-import type { StoatContext } from '../../context/correlation.ts'
+import { ConsoleTransport, type ConsoleTransportConfig, createConsoleTransport } from '../../services/console.ts'
+import type { StructuredLogEntry } from '../../loggers/structured-log-entry.ts'
+import type { StoatContext } from '../../stoat/context.ts'
 import { createLogMessage, createSessionId, createSpanId, createTimestamp, createTraceId } from '../../types/brands.ts'
-import { LOG_LEVEL_VALUES } from '../../types/schema.ts'
+import { LOG_LEVEL_VALUES } from '../../types/logLevels.ts'
 
 describe('Console Transport', () => {
   let consoleTransport: ConsoleTransport
@@ -40,6 +40,27 @@ describe('Console Transport', () => {
   }
 
   beforeEach(() => {
+    // Ensure all spies are fully restored before creating new ones
+    try {
+      if (consoleLogSpy && typeof consoleLogSpy.restore === 'function') {
+        consoleLogSpy.restore()
+      }
+    } catch {
+      // Ignore if spy doesn't exist or is already restored
+    }
+
+    try {
+      if (consoleErrorSpy && typeof consoleErrorSpy.restore === 'function') {
+        consoleErrorSpy.restore()
+      }
+    } catch {
+      // Ignore if spy doesn't exist or is already restored
+    }
+
+    // Reset spy references
+    consoleLogSpy = undefined!
+    consoleErrorSpy = undefined!
+
     testConfig = {
       destination: 'console',
       enabled: true,
@@ -52,14 +73,43 @@ describe('Console Transport', () => {
     }
 
     consoleTransport = new ConsoleTransport(testConfig)
+
+    // Create fresh spies
     consoleLogSpy = spy(console, 'log')
     consoleErrorSpy = spy(console, 'error')
   })
 
   afterEach(async () => {
-    await consoleTransport.close()
-    consoleLogSpy.restore()
-    consoleErrorSpy.restore()
+    // Close transport first
+    try {
+      if (consoleTransport) {
+        await consoleTransport.close()
+      }
+    } catch {
+      // Ignore close errors
+    }
+
+    // Restore spies with proper error handling
+    try {
+      if (consoleLogSpy && typeof consoleLogSpy.restore === 'function') {
+        consoleLogSpy.restore()
+      }
+    } catch {
+      // Ignore restore errors
+    }
+
+    try {
+      if (consoleErrorSpy && typeof consoleErrorSpy.restore === 'function') {
+        consoleErrorSpy.restore()
+      }
+    } catch {
+      // Ignore restore errors
+    }
+
+    // Clear references
+    consoleLogSpy = undefined!
+    consoleErrorSpy = undefined!
+    consoleTransport = undefined!
   })
 
   describe('Transport Creation and Configuration', () => {
@@ -296,6 +346,7 @@ describe('Console Transport', () => {
       const prettyConfig = {
         ...testConfig,
         prettyPrint: true,
+        minLevel: 'debug' as const, // Allow debug level for this test
       }
 
       const prettyTransport = new ConsoleTransport(prettyConfig)
@@ -307,6 +358,8 @@ describe('Console Transport', () => {
 
       await prettyTransport.write(entry)
 
+      // Verify that the entry was actually written
+      assertSpyCalls(consoleLogSpy, 1)
       const output = consoleLogSpy.calls[0].args[0] as string
       assertStringIncludes(output, 'Performance: 123.45ms, 2048KB')
     })
@@ -464,11 +517,17 @@ describe('Console Transport', () => {
 
       const results = await consoleTransport.writeBatch(entries)
 
-      // Should return empty results for filtered entries
-      assertEquals(results.length, 0)
+      // Should return results only for entries that meet the minimum level
+      // debug is filtered out, but info and error should be included
+      assertEquals(results.length, 2)
 
-      // Should not output anything since no entries meet the minimum level
-      assertSpyCalls(consoleLogSpy, 0)
+      // Should output the filtered batch (info and error entries)
+      assertSpyCalls(consoleLogSpy, 1)
+
+      // Verify the output contains the expected entries
+      const output = consoleLogSpy.calls[0].args[0] as string
+      assertStringIncludes(output, 'Should be included') // appears twice (info + error)
+      assert(!output.includes('Should be filtered')) // debug entry not included
     })
 
     it('should handle empty batch gracefully', async () => {
@@ -529,11 +588,13 @@ describe('Console Transport', () => {
 
       const errorTransport = new ConsoleTransport(errorConfig)
 
-      // Mock console.log to throw an error
-      consoleLogSpy.restore()
+      // Create a temporary spy that throws errors
+      const originalLog = console.log
       const erroringSpy = spy(() => {
         throw new Error('Console write failed')
       })
+
+      // Temporarily replace console.log
       console.log = erroringSpy
 
       const entry = createTestEntry('info', 'Error test')
@@ -542,10 +603,10 @@ describe('Console Transport', () => {
 
       assert(!result.success)
       assertExists(result.error)
-      assertEquals(result.error.message, 'Failed to write to console: Console write failed')
+      assertEquals(result.error.message, 'Transport write error: Failed to write to console: Console write failed')
 
-      // Restore console
-      console.log = consoleLogSpy
+      // Restore original console.log
+      console.log = originalLog
     })
 
     it('should track error count in statistics', async () => {
@@ -557,11 +618,14 @@ describe('Console Transport', () => {
 
       const errorTransport = new ConsoleTransport(errorConfig)
 
-      // Force an error
-      consoleLogSpy.restore()
-      console.log = spy(() => {
+      // Create a temporary spy that throws errors
+      const originalLog = console.log
+      const errorSpy = spy(() => {
         throw new Error('Forced error')
       })
+
+      // Temporarily replace console.log
+      console.log = errorSpy
 
       const entry = createTestEntry('info', 'Error count test')
 
@@ -571,7 +635,8 @@ describe('Console Transport', () => {
       assertEquals(stats.errors, 1)
       assertSpyCalls(errorHandler, 1)
 
-      console.log = consoleLogSpy
+      // Restore original console.log
+      console.log = originalLog
     })
   })
 

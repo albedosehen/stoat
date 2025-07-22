@@ -9,9 +9,10 @@ import {
 } from '@std/assert'
 import { afterEach, beforeEach, describe, it } from '@std/testing/bdd'
 import { assertSpyCalls, returnsNext, spy, type Stub, stub } from '@std/testing/mock'
-import { Timer } from '../../core/timer.ts'
+import { Timer } from '../../services/timer.ts'
 import { type StoatContext } from '../../stoat/context.ts'
-import type { PerformanceMetrics } from '../../schema/performance/metrics.ts'
+import type { PerformanceMetrics } from '../../types/metrics.ts'
+import { createRequestId } from '../../types/brands.ts'
 
 // Test utilities
 function createTestContext(overrides?: Partial<StoatContext>): StoatContext {
@@ -559,7 +560,7 @@ describe('Timer - Comprehensive Test Suite', () => {
       const contexts = [
         createTestContext({ symbol: 'AAPL', strategy: 'momentum' }),
         createTestContext({ agentId: 'agent-123', portfolioId: 'port-456' }),
-        createTestContext({ requestId: 'req-789' }),
+        createTestContext({ requestId: createRequestId('req-789') }),
       ]
 
       contexts.forEach((context, index) => {

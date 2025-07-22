@@ -8,7 +8,7 @@ import {
   createStructuredLogger,
   createStructuredEntry,
   serializeLogEntry
-} from '../src/logging/structured.ts'
+} from '../src/loggers/structured-log-entry.ts'
 import {
   createTraceId,
   createSpanId,
