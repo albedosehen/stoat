@@ -9,10 +9,10 @@ import { DEFAULT_STOAT_TRANSPORT_CONFIG, type StoatTransportConfig } from './con
 import { type StoatMessage } from './message.ts'
 import type { StoatContext } from './context.ts'
 // Import unified logger classes
-import { StoatBasicLogger, type BasicConfig } from '../loggers/basic-logger.ts'
-import { StoatAsyncLogger, type AsyncConfig } from '../loggers/async-logger.ts'
+import { type BasicConfig, StoatBasicLogger } from '../loggers/basic-logger.ts'
+import { type AsyncConfig, StoatAsyncLogger } from '../loggers/async-logger.ts'
 import { StoatStructuredLogger, type StructuredConfig } from '../loggers/structured-logger.ts'
-import { StoatHybridLogger, type HybridConfig } from '../loggers/hybrid-logger.ts'
+import { type HybridConfig, StoatHybridLogger } from '../loggers/hybrid-logger.ts'
 import type { StructuredLogEntry } from '../loggers/structured-log-entry.ts'
 
 /**
@@ -70,11 +70,12 @@ export class stoat {
    * @returns Appropriate logger instance based on configuration
    */
   static create(
-    config?: Partial<StoatTransportConfig> |
-             ({ type: 'basic' } & BasicConfig) |
-             ({ type: 'async' } & AsyncConfig) |
-             ({ type: 'structured' } & StructuredConfig) |
-             ({ type: 'hybrid' } & HybridConfig)
+    config?:
+      | Partial<StoatTransportConfig>
+      | ({ type: 'basic' } & BasicConfig)
+      | ({ type: 'async' } & AsyncConfig)
+      | ({ type: 'structured' } & StructuredConfig)
+      | ({ type: 'hybrid' } & HybridConfig),
   ): StoatBasicLogger | StoatAsyncLogger | StoatStructuredLogger | StoatHybridLogger {
     // Handle legacy basic logger creation (backward compatibility)
     if (!config || !('type' in config)) {

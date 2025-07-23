@@ -4,9 +4,9 @@ import { assertSpyCalls, type Spy, spy } from '@std/testing/mock'
 import {
   ASYNC_CONFIGS,
   type AsyncConfig,
-  StoatAsyncLogger as AsyncLogger,
   createAsyncLogger,
   getAsyncConfig,
+  StoatAsyncLogger as AsyncLogger,
 } from '../../loggers/async-logger.ts'
 import type { StructuredLogEntry } from '../../loggers/structured-log-entry.ts'
 import { createAgentId, createLogMessage, createStrategyId, createTimestamp } from '../../types/brands.ts'

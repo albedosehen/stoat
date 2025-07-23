@@ -3,11 +3,7 @@
  * @module
  */
 
-export {
-  ConsoleTransportService,
-  type ConsoleTransportConfig,
-  createConsoleTransport
-} from './services/console.ts'
+export { type ConsoleTransportConfig, ConsoleTransportService, createConsoleTransport } from './services/console.ts'
 
 export {
   createSerializer,
@@ -50,43 +46,34 @@ export {
 
 // AsyncLogger
 export {
-  StoatAsyncLogger,
-  createAsyncLogger,
-  getAsyncConfig,
   ASYNC_CONFIGS,
   type AsyncConfig,
   type AsyncLoggerConfig,
   type AsyncMetrics,
   type BufferEntry,
+  createAsyncLogger,
   type FlushStrategy,
+  getAsyncConfig,
+  StoatAsyncLogger,
 } from './async-logger.ts'
 
 // StructuredLogger
 export {
-  StructuredLogger,
   createStructuredEntry,
   createStructuredLogger,
-  serializeLogEntry,
   type FieldMapping,
   type SerializationOptions,
+  serializeLogEntry,
   type StructuredError,
   type StructuredLogEntry,
+  StructuredLogger,
 } from './structured-log-entry.ts'
 
 // BasicLogger
-export {
-  StoatBasicLogger,
-  type BasicConfig,
-} from './basic-logger.ts'
+export { type BasicConfig, StoatBasicLogger } from './basic-logger.ts'
 
 // StructuredLogger class wrapper
-export {
-  StoatStructuredLogger,
-  type StructuredConfig,
-} from './structured-logger.ts'
+export { StoatStructuredLogger, type StructuredConfig } from './structured-logger.ts'
 
 // HybridLogger
-export {
-  StoatHybridLogger,
-  type HybridConfig,
-} from './hybrid-logger.ts'
+export { type HybridConfig, StoatHybridLogger } from './hybrid-logger.ts'

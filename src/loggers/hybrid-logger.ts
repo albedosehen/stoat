@@ -6,17 +6,10 @@
 import type { LogLevelName } from '../types/logLevels.ts'
 import { LOG_LEVEL_VALUES } from '../types/logLevels.ts'
 import type { StoatContext } from '../stoat/context.ts'
-import type { TraceId, Timestamp, LogMessage } from '../types/brands.ts'
-import { StoatAsyncLogger, type AsyncConfig, type AsyncMetrics } from './async-logger.ts'
-import { 
-  StoatStructuredLogger, 
-  type StructuredConfig 
-} from './structured-logger.ts'
-import { 
-  type StructuredLogEntry,
-  type SerializationOptions,
-  type FieldMapping
-} from './structured-log-entry.ts'
+import type { LogMessage, Timestamp, TraceId } from '../types/brands.ts'
+import { type AsyncConfig, type AsyncMetrics, StoatAsyncLogger } from './async-logger.ts'
+import { StoatStructuredLogger, type StructuredConfig } from './structured-logger.ts'
+import { type FieldMapping, type SerializationOptions, type StructuredLogEntry } from './structured-log-entry.ts'
 
 /**
  * Configuration for StoatHybridLogger
@@ -34,7 +27,7 @@ export interface HybridConfig {
 
 /**
  * StoatHybridLogger - Combines async + structured logging capabilities
- * 
+ *
  * This logger handles complex configurations that need both async buffering
  * and structured logging features. It provides the full feature set of both
  * async and structured logging in a unified interface.
@@ -56,9 +49,9 @@ export class StoatHybridLogger {
     // Create async logger - this will handle the actual output
     this.asyncLogger = new StoatAsyncLogger(
       config.async,
-      this.enableStructuredLogging && !this.asyncStructuredLogging 
+      this.enableStructuredLogging && !this.asyncStructuredLogging
         ? (entry) => this.handleSyncStructuredEntry(entry)
-        : undefined
+        : undefined,
     )
 
     // Create structured logger - this will handle entry creation and serialization
@@ -298,7 +291,11 @@ export class StoatHybridLogger {
    * Get structured logger performance statistics
    * @returns Performance stats object
    */
-  getStructuredPerformanceStats(): { totalEntries: number; averageSerializationTime: number; averageProcessingTime: number } {
+  getStructuredPerformanceStats(): {
+    totalEntries: number
+    averageSerializationTime: number
+    averageProcessingTime: number
+  } {
     return this.structuredLogger.getPerformanceStats()
   }
 
@@ -341,7 +338,7 @@ export class StoatHybridLogger {
     message: string,
     data?: unknown,
     error?: Error,
-    context?: StoatContext
+    context?: StoatContext,
   ): StructuredLogEntry {
     if (this.enableStructuredLogging) {
       return this.structuredLogger.createLogEntry({ level, message, data, error, context })
@@ -354,11 +351,13 @@ export class StoatHybridLogger {
         levelValue: LOG_LEVEL_VALUES[level],
         message: message as LogMessage,
         data,
-        error: error ? {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-        } : undefined,
+        error: error
+          ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          }
+          : undefined,
         context,
       }
     }

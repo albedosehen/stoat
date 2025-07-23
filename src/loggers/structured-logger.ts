@@ -7,10 +7,10 @@ import type { LogLevelName } from '../types/logLevels.ts'
 import type { StoatContext } from '../stoat/context.ts'
 import type { TraceId } from '../types/brands.ts'
 import {
-  StructuredLogger,
-  type StructuredLogEntry,
+  type FieldMapping,
   type SerializationOptions,
-  type FieldMapping
+  type StructuredLogEntry,
+  StructuredLogger,
 } from './structured-log-entry.ts'
 
 /**
@@ -25,7 +25,7 @@ export interface StructuredConfig extends SerializationOptions {
 
 /**
  * StoatStructuredLogger - Structured logging functionality
- * 
+ *
  * Encapsulates structured logging functionality into a cohesive class that provides
  * methods for creating and handling structured log entries with comprehensive
  * serialization and customization options.
@@ -262,10 +262,10 @@ export class StoatStructuredLogger {
     message: string,
     data?: unknown,
     error?: Error,
-    context?: StoatContext
+    context?: StoatContext,
   ): StructuredLogEntry {
     const entry = this.logger.createLogEntry({ level, message, data, error, context })
-    
+
     // Serialize the entry
     const serialized = this.logger.serialize(entry)
 

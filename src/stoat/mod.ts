@@ -5,7 +5,13 @@
  * @module
  */
 
-export { DEFAULT_STOAT_CONFIG, DEFAULT_STOAT_TRANSPORT_CONFIG, type StoatTransportConfig, type StoatTransportConfigSchema, type StoatTransportConfig as StoatConfig } from './config.ts'
+export {
+  DEFAULT_STOAT_CONFIG,
+  DEFAULT_STOAT_TRANSPORT_CONFIG,
+  type StoatTransportConfig,
+  type StoatTransportConfig as StoatConfig,
+  type StoatTransportConfigSchema,
+} from './config.ts'
 
 export { type StoatContext } from './context.ts'
 

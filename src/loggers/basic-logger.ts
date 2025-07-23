@@ -18,7 +18,7 @@ export interface BasicConfig extends StoatTransportConfig {
 
 /**
  * StoatBasicLogger - Basic synchronous logging functionality
- * 
+ *
  * Encapsulates the current basic logging functionality from the original stoat class.
  * Provides console-first logging with optional file output and comprehensive
  * log level support with context management.

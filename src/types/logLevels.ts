@@ -108,7 +108,6 @@ export interface LevelHierarchy {
   readonly sortedLevels: string[]
 }
 
-
 // Core log levels - string names for validation, numeric values for performance
 export const LOG_LEVEL_NAMES = [
   'trace',

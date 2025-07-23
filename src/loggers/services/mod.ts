@@ -4,10 +4,10 @@
  */
 
 export {
+  type ConsoleTransportConfig,
   ConsoleTransportService,
   ConsoleTransportService as ConsoleTransport, // Backward compatibility
-  type ConsoleTransportConfig,
-  createConsoleTransport
+  createConsoleTransport,
 } from './console.ts'
 
 export {
@@ -36,14 +36,14 @@ export {
 } from './sanitizer.ts'
 
 export {
+  compareLevels,
+  createCustomLevel,
   type CustomLogLevel,
+  getGlobalLevelManager,
+  getLevelValue,
+  isValidLevelName,
   type LevelFilter,
-  type TimeBasedFilter,
   type LevelHierarchy,
   LogLevelManager,
-  getGlobalLevelManager,
-  createCustomLevel,
-  isValidLevelName,
-  compareLevels,
-  getLevelValue,
+  type TimeBasedFilter,
 } from './log-level-manager.ts'

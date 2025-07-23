@@ -6,6 +6,7 @@
 
 // Brands - unique identifiers for various entities in Stoat
 export {
+  type AgentId,
   createAgentId,
   createLogMessage,
   createOperationId,
@@ -20,12 +21,11 @@ export {
   createSymbol,
   createTimestamp,
   createTraceId,
-  markSensitive,
-  type AgentId,
   type LogLevel,
   type LogLevelNumeric,
   type LogLevelString,
   type LogMessage,
+  markSensitive,
   type OperationId,
   type OrderId,
   type PluginContext,
@@ -56,47 +56,39 @@ export {
 } from './config.ts'
 
 // Defaults - default configurations for Stoat
-export {
-  DEFAULT_CONFIGS,
-  type EnvironmentConfig,
-} from './defaults.ts'
+export { DEFAULT_CONFIGS, type EnvironmentConfig } from './defaults.ts'
 
 // Environment - environment variable utilities
-export {
-  getEnvVarName,
-  normalizeEnvValue,
-  ENV_VAR_MAPPING,
-  STOAT_ENV_PREFIX,
-} from './environment.ts'
+export { ENV_VAR_MAPPING, getEnvVarName, normalizeEnvValue, STOAT_ENV_PREFIX } from './environment.ts'
 
 // Log Levels - core logging level definitions
 export {
+  type CustomLogLevel,
   getLogLevelColor,
   getLogLevelValue,
-  shouldLogLevel,
+  type LevelFilter,
+  type LevelHierarchy,
   LOG_DISPLAY_CONFIG,
   LOG_LEVEL_CONFIG,
   LOG_LEVEL_NAMES,
   LOG_LEVEL_VALUES,
   LOG_SEVERITY_COLORS,
-  type CustomLogLevel,
-  type LevelFilter,
-  type LevelHierarchy,
   type LogColor,
   type LogLevelConfig,
   type LogLevelName,
   type LogLevelValue,
+  shouldLogLevel,
   type TimeBasedFilter,
 } from './logLevels.ts'
 
 // Transports - transport configuration and types
 export {
-  TRANSPORT_TYPES,
   type AsyncTransport,
   type ConsoleTransportInterface,
   type CustomTransport,
   type FileTransport,
   type MemoryTransport,
+  TRANSPORT_TYPES,
   type TransportBase,
   type TransportConfig,
   type TransportType,
@@ -104,9 +96,9 @@ export {
 
 // Validation - configuration validation functions
 export {
-  ConfigValidationError,
   applyConfigDefaults,
   applyTransportDefaults,
+  ConfigValidationError,
   isValidLogLevel,
   isValidTransportType,
   validateConfig,
@@ -119,17 +111,12 @@ export {
  * These will be changed to be part of a planned plugin system in stoat.
  */
 //
-export {
-  MEMORY_TYPE,
-  type MemoryDelta,
-  type MemoryDeltaBase,
-  type MemoryType
-} from './memory.ts'
+export { MEMORY_TYPE, type MemoryDelta, type MemoryDeltaBase, type MemoryType } from './memory.ts'
 
 // Legacy exports for performance metrics
 export {
   PERFORMANCE_OPERATION,
-  type PerformanceOperation,
   type PerformanceMetrics,
-  type PerformanceMetricsSchema
+  type PerformanceMetricsSchema,
+  type PerformanceOperation,
 } from './metrics.ts'
