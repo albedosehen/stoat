@@ -148,6 +148,7 @@ export class CustomSerializerEngine {
     truncations: 0,
   }
 
+  /** Creates a new ObjectSerializer with the provided configuration. */
   constructor(config: Partial<SerializerConfig> = {}) {
     this.config = {
       maxDepth: 10,

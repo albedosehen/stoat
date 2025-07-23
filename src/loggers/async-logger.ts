@@ -195,6 +195,7 @@ export class StoatAsyncLogger {
   private signalListenersAdded = false
   private retryTimeouts: Set<number> = new Set()
 
+  /** Creates a new AsyncLogger instance with the provided configuration and optional sync callback. */
   constructor(config: AsyncConfig, syncCallback?: (entry: StructuredLogEntry) => void) {
     this.config = config
     this.syncCallback = syncCallback
@@ -512,6 +513,7 @@ export class StoatAsyncLogger {
       ))
   }
 
+  /** Determines whether to use fast path for logging based on entry characteristics. */
   private shouldUseFastPath(entry: StructuredLogEntry): boolean {
     // Use fast path for low-footprint, simple log entries
     return !entry.error &&
@@ -520,6 +522,7 @@ export class StoatAsyncLogger {
       this.fastBufferSize < 800
   }
 
+  /** Handles backpressure by pausing or adjusting the logging rate. */
   private async handleBackpressure(): Promise<void> {
     // Strategy 1: Try immediate flush
     if (!this.isFlushing) {
@@ -574,6 +577,7 @@ export class StoatAsyncLogger {
    * keeping only entries with priority 40 (warn) and above.
    *
    * @returns {void}
+   * @private
    */
   private dropLowPriorityEntries(): void {
     const originalLength = this.buffer.length
@@ -592,6 +596,11 @@ export class StoatAsyncLogger {
     }
   }
 
+  /**
+   * Performs the flush operation for the logger.
+   * @private
+   * @throws {PerformanceError} If the flush operation fails
+   */
   private async performFlush(): Promise<void> {
     if (this.buffer.length === 0 && this.fastBufferSize === 0) {
       return

@@ -232,6 +232,7 @@ export class StructuredLogger {
   private serializationTimes: number[] = []
   private processingTimes: number[] = []
 
+  /** Creates a new StructuredLogSerializer with the provided serialization options. */
   constructor(options: SerializationOptions = {}) {
     this.defaultOptions = {
       pretty: false,

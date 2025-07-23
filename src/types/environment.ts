@@ -4,9 +4,10 @@
  * @module
  */
 
-// Environment variable configuration with STOAT_ prefix
+/** Environment variable prefix used for all Stoat configuration variables. */
 export const STOAT_ENV_PREFIX = 'STOAT_'
 
+/** Mapping of environment variable names to configuration paths. */
 export const ENV_VAR_MAPPING: Record<string, string> = {
   [`${STOAT_ENV_PREFIX}LEVEL`]: 'level',
   [`${STOAT_ENV_PREFIX}NAME`]: 'name',
@@ -37,7 +38,9 @@ export const ENV_VAR_MAPPING: Record<string, string> = {
 } as const
 
 /**
- * Normalize environment variable values to appropriate types
+ * Normalizes environment variable values to appropriate types.
+ * @param value - The string value from environment variable
+ * @returns Normalized value as string, number, or boolean
  */
 export function normalizeEnvValue(value: string): string | number | boolean {
   // Try to parse as number

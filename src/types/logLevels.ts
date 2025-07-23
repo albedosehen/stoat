@@ -108,7 +108,7 @@ export interface LevelHierarchy {
   readonly sortedLevels: string[]
 }
 
-// Core log levels - string names for validation, numeric values for performance
+/** Array of standard log level names used for validation and type checking. */
 export const LOG_LEVEL_NAMES = [
   'trace',
   'debug',
@@ -118,6 +118,7 @@ export const LOG_LEVEL_NAMES = [
   'fatal',
 ] as const
 
+/** Numeric values for log levels used for performance comparisons and filtering. */
 export const LOG_LEVEL_VALUES = {
   trace: 10,
   debug: 20,
@@ -127,7 +128,10 @@ export const LOG_LEVEL_VALUES = {
   fatal: 60,
 } as const
 
+/** Union type of all valid log level names. */
 export type LogLevelName = typeof LOG_LEVEL_NAMES[number]
+
+/** Union type of all valid log level numeric values. */
 export type LogLevelValue = typeof LOG_LEVEL_VALUES[LogLevelName]
 
 /**
@@ -143,6 +147,7 @@ export const LOG_SEVERITY_COLORS = {
   fatal: '\x1b[35m',
 } as const
 
+/** Type representing ANSI color codes for log level display. */
 export type LogColor = typeof LOG_SEVERITY_COLORS[keyof typeof LOG_SEVERITY_COLORS]
 
 /**
@@ -158,6 +163,7 @@ export const LOG_LEVEL_CONFIG: Record<LogLevelName, { value: LogLevelValue; colo
   fatal: { value: LOG_LEVEL_VALUES.fatal, color: LOG_SEVERITY_COLORS.fatal },
 } as const satisfies Record<LogLevelName, { value: LogLevelValue; color: string }>
 
+/** Configuration interface for log levels containing value and color properties. */
 export type LogLevelConfig = typeof LOG_LEVEL_CONFIG[keyof typeof LOG_LEVEL_CONFIG]
 
 /**

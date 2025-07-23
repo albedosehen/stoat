@@ -12,6 +12,10 @@ export class Timer {
   private memoryStart: Deno.MemoryUsage
   private memoryEnd?: Deno.MemoryUsage
 
+  /**
+   * Creates a performance timer instance for tracking operation metrics.
+   * @param operation - Name of the operation being timed
+   */
   constructor(
     private operation: string,
   ) {
@@ -42,10 +46,7 @@ export class Timer {
     }
   }
 
-  /**
-   * Get current memory usage from Deno runtime
-   * @returns Current memory usage statistics
-   */
+  /** Gets current memory usage metrics from the Deno runtime. */
   private getMemoryUsage(): Deno.MemoryUsage {
     return Deno.memoryUsage()
   }

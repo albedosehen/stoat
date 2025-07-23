@@ -22,6 +22,11 @@ import type { StructuredLogEntry } from '../loggers/structured-log-entry.ts'
 export class stoat {
   private lastLoggedMessage: StoatMessage | null = null
 
+  /**
+   * Creates main Stoat logger instances with configuration and context.
+   * @param config - Transport configuration for the logger
+   * @param context - Logging context for correlation and metadata
+   */
   private constructor(
     private config: StoatTransportConfig,
     private context: StoatContext,
@@ -41,6 +46,7 @@ export class stoat {
    * @param config Async logger configuration
    * @returns StoatAsyncLogger instance
    */
+  /** Creates an async logger instance with the provided configuration. */
   static create(config: { type: 'async' } & AsyncConfig): StoatAsyncLogger
 
   /**
@@ -48,6 +54,7 @@ export class stoat {
    * @param config Structured logger configuration
    * @returns StoatStructuredLogger instance
    */
+  /** Creates a structured logger instance with the provided configuration. */
   static create(config: { type: 'structured' } & StructuredConfig): StoatStructuredLogger
 
   /**
@@ -55,6 +62,7 @@ export class stoat {
    * @param config Hybrid logger configuration
    * @returns StoatHybridLogger instance
    */
+  /** Creates a hybrid logger instance with the provided configuration. */
   static create(config: { type: 'hybrid' } & HybridConfig): StoatHybridLogger
 
   /**
@@ -62,6 +70,7 @@ export class stoat {
    * @param config Legacy basic transport configuration (fallback)
    * @returns StoatBasicLogger instance for backward compatibility
    */
+  /** Creates a basic logger instance with optional configuration. */
   static create(config?: Partial<StoatTransportConfig>): StoatBasicLogger
 
   /**

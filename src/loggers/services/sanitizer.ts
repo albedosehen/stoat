@@ -85,10 +85,15 @@ export const LOG_INJECTION_PATTERNS: Record<string, RegExp> = {
  * @property {boolean} strictMode - Whether to apply strict sanitization rules (only alphanumeric, basic punctuation, and spaces)
  */
 export interface SanitizationOptions {
+  /** Maximum length for strings before truncation. */
   maxLength?: number
+  /** Whether to allow newline characters in strings. */
   allowNewlines?: boolean
+  /** Whether to allow ANSI escape sequences in strings. */
   allowAnsiEscapes?: boolean
+  /** Whether to preserve whitespace and spacing in strings. */
   preserveSpacing?: boolean
+  /** Whether to enable strict mode for more aggressive sanitization. */
   strictMode?: boolean
 }
 
@@ -103,11 +108,17 @@ export interface SanitizationOptions {
  * @property {number} maxDepth - Maximum depth for deep redaction
  */
 export interface RedactionOptions {
+  /** Object paths to redact from data structures. */
   paths?: string[]
+  /** Regular expression patterns to match and redact. */
   patterns?: RegExp[]
+  /** Custom replacement mappings for specific values. */
   customReplacements?: Record<string, string>
+  /** Whether to perform deep redaction on nested objects. */
   deepRedaction?: boolean
+  /** Whether to preserve object structure during redaction. */
   preserveStructure?: boolean
+  /** Maximum depth for recursive redaction operations. */
   maxDepth?: number
 }
 
@@ -137,11 +148,13 @@ export class InputSanitizer {
   private config: SecurityConfig
   private customPatterns: Map<string, RegExp> = new Map()
 
+  /** Creates a new SecuritySanitizer with the provided security configuration. */
   constructor(config: SecurityConfig) {
     this.config = config
     this.initializeCustomPatterns()
   }
 
+  /** Initializes custom regex patterns for sensitive data detection. */
   private initializeCustomPatterns(): void {
     for (const pattern of this.config.redactPatterns ?? []) {
       try {
@@ -224,6 +237,7 @@ export class InputSanitizer {
     }
   }
 
+  /** Redacts sensitive values from arbitrary data structures. */
   private redactValue(value: unknown, options: RedactionOptions, depth: number): unknown {
     const maxDepth = options.maxDepth ?? 10
 
@@ -258,6 +272,7 @@ export class InputSanitizer {
     return value
   }
 
+  /** Redacts sensitive patterns from string values. */
   private redactString(str: string, options: RedactionOptions): RedactedData | string {
     let redacted = str
 
@@ -281,6 +296,7 @@ export class InputSanitizer {
     return redacted === str ? str : (redacted as RedactedData)
   }
 
+  /** Redacts sensitive data from object properties. */
   private redactObject(
     obj: Record<string, unknown>,
     options: RedactionOptions,

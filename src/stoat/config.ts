@@ -6,6 +6,9 @@
 import { LOG_LEVEL } from '../types/log.ts'
 import type { LogLevel } from '../types/log.ts'
 
+// Re-export LogLevel to make it public for documentation
+export type { LogLevel } from '../types/log.ts'
+
 /**
  * Stoat Transport Configuration interface
  * Defines the structure for Stoat logger transport-specific configuration.
@@ -80,4 +83,4 @@ export const DEFAULT_STOAT_TRANSPORT_CONFIG: StoatTransportConfig = {
  * Legacy export for backward compatibility
  * @deprecated Use DEFAULT_STOAT_TRANSPORT_CONFIG instead
  */
-export const DEFAULT_STOAT_CONFIG = DEFAULT_STOAT_TRANSPORT_CONFIG
+export const DEFAULT_STOAT_CONFIG: StoatTransportConfig = DEFAULT_STOAT_TRANSPORT_CONFIG

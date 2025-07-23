@@ -17,10 +17,16 @@ import type {
 } from './transports.ts'
 import type { StoatCoreConfig } from './config.ts'
 
-// Custom error class for configuration validation
+/** Custom error class for configuration validation with detailed issue tracking. */
 export class ConfigValidationError extends Error {
+  /** Array of specific validation issues found during configuration validation. */
   public readonly issues: string[]
 
+  /**
+   * Creates a new ConfigValidationError with validation issues.
+   * @param message The main error message
+   * @param issues Array of specific validation issues
+   */
   constructor(message: string, issues: string[] = []) {
     super(message)
     this.name = 'ConfigValidationError'
@@ -29,18 +35,27 @@ export class ConfigValidationError extends Error {
 }
 
 // Type guard functions
+/** Validates that a value is a valid log level name. */
 function isValidLogLevel(value: unknown): value is LogLevelName {
   return typeof value === 'string' && LOG_LEVEL_NAMES.includes(value as LogLevelName)
 }
 
+/** Validates that a value is a valid transport type. */
 function isValidTransportType(value: unknown): value is TransportType {
   return typeof value === 'string' && TRANSPORT_TYPES.includes(value as TransportType)
 }
 
+/** Validates that a value is a valid rotation type for file transports. */
 function isValidRotationType(value: unknown): value is 'daily' | 'hourly' | 'size' | 'none' {
   return typeof value === 'string' && ['daily', 'hourly', 'size', 'none'].includes(value)
 }
 
+/**
+ * Validates and normalizes transport configuration.
+ * @param transport - The transport configuration to validate
+ * @returns Validated transport configuration with defaults applied
+ * @throws {ConfigValidationError} When validation fails
+ */
 function validateTransport(transport: unknown): TransportConfig {
   const issues: string[] = []
 
@@ -123,6 +138,11 @@ function validateTransport(transport: unknown): TransportConfig {
   return applyTransportDefaults(t as unknown as TransportConfig)
 }
 
+/**
+ * Applies default values to transport configuration based on transport type.
+ * @param transport - The transport configuration to apply defaults to
+ * @returns Transport configuration with type-specific defaults applied
+ */
 function applyTransportDefaults(transport: TransportConfig): TransportConfig {
   const base = {
     enabled: true,
@@ -176,7 +196,12 @@ function applyTransportDefaults(transport: TransportConfig): TransportConfig {
   }
 }
 
-function applyConfigDefaults(config: StoatCoreConfig): StoatCoreConfig {
+/**
+ * Applies default values to the main Stoat configuration.
+ * @param config - The configuration to apply defaults to
+ * @returns Complete configuration with all defaults applied
+ */
+export function applyConfigDefaults(config: StoatCoreConfig): StoatCoreConfig {
   const defaults: StoatCoreConfig = {
     level: 'info',
     transports: [{ type: 'console', colors: true, prettyPrint: false }],
@@ -261,7 +286,12 @@ function applyConfigDefaults(config: StoatCoreConfig): StoatCoreConfig {
   return mergedConfig
 }
 
-// Configuration validation and normalization utilities
+/**
+ * Validates and normalizes the main Stoat configuration object.
+ * @param config The configuration object to validate
+ * @returns Validated and normalized configuration with defaults applied
+ * @throws {ConfigValidationError} When validation fails
+ */
 export function validateConfig(config: unknown): StoatCoreConfig {
   const issues: string[] = []
 
@@ -323,4 +353,7 @@ export function validateConfig(config: unknown): StoatCoreConfig {
   return applyConfigDefaults(c as unknown as StoatCoreConfig)
 }
 
-export { applyConfigDefaults, applyTransportDefaults, isValidLogLevel, isValidTransportType, validateTransport }
+export { applyTransportDefaults, isValidLogLevel, isValidTransportType, validateTransport }
+
+// Re-export StoatCoreConfig to make it public for documentation
+export type { StoatCoreConfig } from './config.ts'

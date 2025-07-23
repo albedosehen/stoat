@@ -2,7 +2,7 @@
 	"lock": true,
 
 	"name": "@albedosehen/stoat",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Stoat is a simple and modular logging framework with support for multiple transports.",
   "author": "Shon Thomas",
   "license": "MIT",

@@ -6,7 +6,7 @@
 
 import type { LogLevelName } from './logLevels.ts'
 
-// Default configuration for different environments
+/** Default configuration objects for different deployment environments (development, production, testing). */
 export const DEFAULT_CONFIGS = {
   development: {
     level: 'debug' as LogLevelName,
@@ -91,5 +91,5 @@ export const DEFAULT_CONFIGS = {
   },
 } as const
 
-// Type for environment-specific configs
+/** Type representing environment-specific configuration objects (development, production, testing). */
 export type EnvironmentConfig = typeof DEFAULT_CONFIGS[keyof typeof DEFAULT_CONFIGS]

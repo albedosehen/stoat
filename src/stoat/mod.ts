@@ -8,8 +8,8 @@
 export {
   DEFAULT_STOAT_CONFIG,
   DEFAULT_STOAT_TRANSPORT_CONFIG,
+  type LogLevel,
   type StoatTransportConfig,
-  type StoatTransportConfig as StoatConfig,
   type StoatTransportConfigSchema,
 } from './config.ts'
 

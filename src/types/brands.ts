@@ -6,45 +6,54 @@
 import { StructuredLogger } from '../loggers/structured-log-entry.ts'
 import type { StoatTransportConfig } from '../stoat/config.ts'
 
-// Base brand type for nominal typing
-declare const __brand: unique symbol
+/** Generic brand type constructor for creating nominal types with compile-time type safety. */
+export type Brand<T, TBrand extends string> = T & { readonly __brand: TBrand }
 
-// Generic brand type constructor
-type Brand<T, TBrand extends string> = T & { readonly [__brand]: TBrand }
-
-// Log level types for structured logging
+/** Brand type for log levels providing compile-time type safety. */
 export type LogLevel = Brand<string, 'LogLevel'>
-// Common identifiers for tracing and logging
+
+/** Brand type for distributed tracing IDs used to correlate requests across services. */
 export type TraceId = Brand<string, 'TraceId'>
-// Unique identifiers for spans and requests
+
+/** Brand type for span identifiers used in distributed tracing to track operations. */
 export type SpanId = Brand<string, 'SpanId'>
-// Unique identifiers for requests and sessions
+
+/** Brand type for request correlation IDs used to track individual requests. */
 export type RequestId = Brand<string, 'RequestId'>
-// Unique identifiers for sessions
+
+/** Brand type for user session identifiers used to track user sessions. */
 export type SessionId = Brand<string, 'SessionId'>
-// Timestamp for log messages
+
+/** Brand type for ISO timestamp strings ensuring consistent time formatting. */
 export type Timestamp = Brand<string, 'Timestamp'>
-// Structured log messages with type safety
+
+/** Brand type for log message content providing structured logging type safety. */
 export type LogMessage = Brand<string, 'LogMessage'>
 
-// Sensitive data that should not be logged directly
+/** Brand type for data requiring sanitization to prevent sensitive information leakage. */
 export type SensitiveData = Brand<unknown, 'SensitiveData'>
-// Redacted and sanitized data types for security
+/** Brand type for redacted data that has been processed for security compliance. */
 export type RedactedData = Brand<string, 'RedactedData'>
-// Sanitized input types for safe logging
+
+/** Brand type for sanitized input that has been validated and cleaned for safe processing. */
 export type SanitizedInput = Brand<string, 'SanitizedInput'>
 
-// Performance and trading-specific types
+/** Brand type for operation identifiers used to track specific operations or transactions. */
 export type OperationId = Brand<string, 'OperationId'>
-// Unique identifiers for orders, symbols, strategies, agents, and portfolios
+
+/** Brand type for order identifiers used to uniquely identify trading orders. */
 export type OrderId = Brand<string, 'OrderId'>
-// Unique identifiers for financial instruments
+
+/** Brand type for financial instrument symbols providing type safety for trading symbols. */
 export type Symbol = Brand<string, 'Symbol'>
-// Unique identifiers for trading strategies, agents, and portfolios
+
+/** Brand type for trading strategy identifiers used to track and categorize strategies. */
 export type StrategyId = Brand<string, 'StrategyId'>
-// Unique identifiers for agents and portfolios in trading systems
+
+/** Brand type for agent identifiers used to track automated trading agents. */
 export type AgentId = Brand<string, 'AgentId'>
-// Unique identifiers for portfolios in trading systems
+
+/** Brand type for portfolio identifiers used to track investment portfolios. */
 export type PortfolioId = Brand<string, 'PortfolioId'>
 
 /**

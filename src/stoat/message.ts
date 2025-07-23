@@ -1,23 +1,18 @@
 /**
  * Stoat Message Schema
  * This module defines the schema for log messages in the Stoat system.
- * @abstract,pdi
+ * @module
  */
 import type { LogLevel } from '../types/log.ts'
 import type { StoatContext } from './context.ts'
 import type { PerformanceMetrics } from '../types/metrics.ts'
 
+// Re-export LogLevel to make it public for documentation
+export type { LogLevel } from '../types/log.ts'
+
 /**
  * Stoat Message Schema
  * This schema defines the structure of log messages used in Stoat logging.
- *
- * @property {LogLevel} level - Log level of the message.
- * @property {string} message - The log message content.
- * @property {unknown} [data] - Optional additional data associated with the log message.
- * @property {StoatContext} context - Context information for the log message.
- * @property {PerformanceMetrics} [performance] - Optional performance metrics if available.
- * @property {string} timestamp - Timestamp of the log entry in ISO string format.
- * @property {string} [id] - Normalized log entry ID.
  */
 export interface StoatMessageSchema {
   /** Log level */

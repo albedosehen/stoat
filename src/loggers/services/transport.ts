@@ -43,15 +43,25 @@ export type TransportDestination =
  * @property {(error: Error, entry: StructuredLogEntry) => void} [errorHandler] - Optional error handler for transport errors
  */
 export interface BaseTransportConfig {
+  /** Transport destination identifier. */
   readonly destination: TransportDestination
+  /** Optional name for the transport instance. */
   readonly name?: string
+  /** Whether the transport is enabled. */
   readonly enabled: boolean
+  /** Minimum log level to write. */
   readonly minLevel: LogLevelName
+  /** Optional maximum log level to write. */
   readonly maxLevel?: LogLevelName
+  /** Format of log entries. */
   readonly format?: 'json' | 'text' | 'custom'
+  /** Whether to write logs asynchronously. */
   readonly async: boolean
+  /** Size of the buffer for async transports. */
   readonly bufferSize?: number
+  /** Interval for flushing buffered logs (in ms). */
   readonly flushInterval?: number
+  /** Optional error handler for transport errors. */
   readonly errorHandler?: (error: Error, entry: StructuredLogEntry) => void
 }
 
@@ -67,12 +77,19 @@ export interface BaseTransportConfig {
  * @property {number} [bufferUsage] - Current buffer usage (if applicable)
  */
 export interface TransportStats {
+  /** Total messages successfully written. */
   messagesWritten: number
+  /** Total messages dropped due to buffer overflow or level filtering. */
   messagesDropped: number
+  /** Total bytes written to the transport. */
   bytesWritten: number
+  /** Total errors encountered during write operations. */
   errors: number
+  /** Timestamp of the last successful write operation. */
   lastWrite: Timestamp
+  /** Average time taken for write operations (in ms). */
   avgWriteTime: number
+  /** Current buffer usage (if applicable). */
   bufferUsage?: number
 }
 
@@ -85,9 +102,13 @@ export interface TransportStats {
  * @property {Error} [error] - Error encountered during the write operation (if any
  */
 export interface WriteResult {
+  /** Whether the write operation was successful. */
   readonly success: boolean
+  /** Number of bytes written to the transport. */
   readonly bytesWritten?: number
+  /** Duration of the write operation in milliseconds. */
   readonly duration?: number
+  /** Error that occurred during the write operation. */
   readonly error?: Error
 }
 
@@ -99,8 +120,11 @@ export interface WriteResult {
  * @property {TransportStats} stats - Current statistics for the transport
  */
 export interface Transport {
+  /** Configuration for the transport. */
   readonly config: BaseTransportConfig
+  /** The destination type for the transport. */
   readonly destination: TransportDestination
+  /** Current statistics for the transport. */
   readonly stats: TransportStats
 
   /**
@@ -160,11 +184,16 @@ export interface Transport {
  * @throws {Error} - For unexpected errors
  */
 export abstract class BaseTransport implements Transport {
+  /** Runtime statistics for this transport instance. */
   protected _stats: TransportStats
+  /** Whether this transport has been closed. */
   protected _closed = false
+  /** Internal buffer for log entries. */
   protected _buffer: StructuredLogEntry[] = []
+  /** Timer ID for automatic buffer flushing. */
   protected _flushTimer?: number
 
+  /** Creates a new BaseTransport instance with the provided configuration. */
   constructor(public readonly config: BaseTransportConfig) {
     this._stats = {
       messagesWritten: 0,
@@ -186,10 +215,12 @@ export abstract class BaseTransport implements Transport {
     }
   }
 
+  /** Gets the destination identifier for this transport. */
   get destination(): TransportDestination {
     return this.config.destination
   }
 
+  /** Gets a copy of the current transport statistics. */
   get stats(): TransportStats {
     return {
       ...this._stats,
@@ -496,6 +527,7 @@ export abstract class BaseTransport implements Transport {
  * @class
  */
 export class TransportErrorBase extends Error {
+  /** Creates a new TransportErrorBase with message, transport name, and optional cause. */
   constructor(
     message: string,
     public readonly transport: string,
@@ -518,6 +550,7 @@ export class TransportErrorBase extends Error {
  * @param {Error} [cause] - Optional cause of the error
  */
 export class TransportConfigError extends TransportErrorBase {
+  /** Creates a new TransportConfigError with transport name, configuration issue, and optional cause. */
   constructor(transport: string, configIssue: string, cause?: Error) {
     super(`Transport configuration error: ${configIssue}`, transport, cause)
     this.name = 'TransportConfigError'
@@ -536,6 +569,7 @@ export class TransportConfigError extends TransportErrorBase {
  * @param {Error} [cause] - Optional cause of the error
  */
 export class TransportWriteError extends TransportErrorBase {
+  /** Creates a new TransportWriteError with transport name, write error description, and optional cause. */
   constructor(transport: string, writeError: string, cause?: Error) {
     super(`Transport write error: ${writeError}`, transport, cause)
     this.name = 'TransportWriteError'

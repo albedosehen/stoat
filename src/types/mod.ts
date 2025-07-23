@@ -7,6 +7,7 @@
 // Brands - unique identifiers for various entities in Stoat
 export {
   type AgentId,
+  type Brand,
   createAgentId,
   createLogMessage,
   createOperationId,
@@ -21,7 +22,7 @@ export {
   createSymbol,
   createTimestamp,
   createTraceId,
-  type LogLevel,
+  type LogLevel as BrandLogLevel,
   type LogLevelNumeric,
   type LogLevelString,
   type LogMessage,
@@ -53,6 +54,8 @@ export {
   type PerformanceConfig,
   type PluginConfig,
   type SecurityConfig,
+  type StoatConfig,
+  type StoatCoreConfig,
 } from './config.ts'
 
 // Defaults - default configurations for Stoat
@@ -60,6 +63,9 @@ export { DEFAULT_CONFIGS, type EnvironmentConfig } from './defaults.ts'
 
 // Environment - environment variable utilities
 export { ENV_VAR_MAPPING, getEnvVarName, normalizeEnvValue, STOAT_ENV_PREFIX } from './environment.ts'
+
+// Log - core log types and constants
+export { LOG_LEVEL, LOG_LEVEL_PRIORITY, type LogLevel, type LogLevelPriority } from './log.ts'
 
 // Log Levels - core logging level definitions
 export {

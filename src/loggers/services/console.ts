@@ -20,10 +20,15 @@ import { BaseTransport, type BaseTransportConfig, TransportWriteError } from './
  * @property {Partial<Record<LogLevelName, string>>} [colorMap] - Optional custom color mapping for log levels
  */
 export interface ConsoleTransportConfig extends BaseTransportConfig {
+  /** Transport destination identifier, always 'console' for console transport. */
   readonly destination: 'console'
+  /** Whether to enable colored output for console logging. */
   readonly colors: boolean
+  /** Whether to enable pretty-printed JSON output for console logging. */
   readonly prettyPrint: boolean
+  /** Whether to use stderr instead of stdout for console output. */
   readonly useStderr: boolean
+  /** Optional custom color mapping for log levels. */
   readonly colorMap?: Partial<Record<LogLevelName, string>>
 }
 
@@ -57,6 +62,7 @@ export class ConsoleTransportService extends BaseTransport {
   private colorMap: Record<LogLevelName, string>
   private useColors: boolean
 
+  /** Creates a new ConsoleTransportService with the provided configuration. */
   constructor(config: ConsoleTransportConfig) {
     super(config)
     this.colorMap = { ...DEFAULT_COLORS, ...config.colorMap }
