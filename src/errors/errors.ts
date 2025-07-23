@@ -65,7 +65,16 @@ export class StoatError extends Error {
     }
   }
 
-  toJSON() {
+  toJSON(): {
+    name: string
+    message: string
+    code: string
+    severity: 'low' | 'medium' | 'high' | 'critical'
+    retryable: boolean
+    context: StoatErrorContext
+    stack?: string
+    cause?: string
+  } {
     return {
       name: this.name,
       message: this.message,

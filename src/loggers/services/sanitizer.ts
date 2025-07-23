@@ -66,7 +66,7 @@ export const REDACTION_REPLACEMENTS = {
  * @property {RegExp} verticalTab - Matches vertical tab characters
  * @property {RegExp} backspace - Matches backspace characters
  */
-export const LOG_INJECTION_PATTERNS = {
+export const LOG_INJECTION_PATTERNS: Record<string, RegExp> = {
   crlf: /[\r\n]/g,
   ansiEscape: new RegExp('\x1b\\[[0-9;]*[mGKH]', 'g'),
   nullByte: new RegExp('\x00', 'g'),

@@ -149,7 +149,7 @@ export type LogColor = typeof LOG_SEVERITY_COLORS[keyof typeof LOG_SEVERITY_COLO
  * Unified log level configuration
  * Maps each log level to its value and color for display
  */
-export const LOG_LEVEL_CONFIG = {
+export const LOG_LEVEL_CONFIG: Record<LogLevelName, { value: LogLevelValue; color: string }> = {
   trace: { value: LOG_LEVEL_VALUES.trace, color: LOG_SEVERITY_COLORS.trace },
   debug: { value: LOG_LEVEL_VALUES.debug, color: LOG_SEVERITY_COLORS.debug },
   info: { value: LOG_LEVEL_VALUES.info, color: LOG_SEVERITY_COLORS.info },

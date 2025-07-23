@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-07-22
+
+### Added
+
+- `no-slow-types` rule to `deno.json` to prevent slow type errors.
+- `stoat` to Deno ecosystem via [jsr](https://jsr.io/@albedosehen/stoat).
+
+### Fixed
+
+- `LOG_LEVEL_CONFIG` export in `src/types/log.ts` to ensure proper type definitions.
+- `ENV_VAR_MAPPING` export in `src/types/environment.ts` to ensure proper type definitions.
+- Remaining slow-type errors found.
+
 ## [1.0.0] - 2025-07-22
 
 ### Added

@@ -7,7 +7,7 @@
 // Environment variable configuration with STOAT_ prefix
 export const STOAT_ENV_PREFIX = 'STOAT_'
 
-export const ENV_VAR_MAPPING = {
+export const ENV_VAR_MAPPING: Record<string, string> = {
   [`${STOAT_ENV_PREFIX}LEVEL`]: 'level',
   [`${STOAT_ENV_PREFIX}NAME`]: 'name',
   [`${STOAT_ENV_PREFIX}VERSION`]: 'version',
