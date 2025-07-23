@@ -7,8 +7,9 @@ import { LOG_LEVEL } from '../types/log.ts'
 import type { LogLevel } from '../types/log.ts'
 
 /**
- * Stoat Configuration interface
- * Defines the structure for Stoat logger configuration.
+ * Stoat Transport Configuration interface
+ * Defines the structure for Stoat logger transport-specific configuration.
+ * This configuration focuses on transport mechanisms, buffering, and file management.
  *
  * @property {LogLevel} level - Minimum log level to process.
  * @property {number} bufferSize - Size of the log buffer.
@@ -22,7 +23,7 @@ import type { LogLevel } from '../types/log.ts'
  * @property {Record<string, unknown>} [metadata] - Additional metadata to include in all log entries.
  * @property {boolean} prettyPrint - Whether to enable pretty-print JSON format for console output.
  */
-export interface StoatConfigSchema {
+export interface StoatTransportConfigSchema {
   /** Minimum log level to process */
   level: LogLevel
   /** Buffer size for log entries */
@@ -48,12 +49,12 @@ export interface StoatConfigSchema {
 }
 
 /**
- * Stoat Config Type
+ * Stoat Transport Config Type
  */
-export type StoatConfig = StoatConfigSchema
+export type StoatTransportConfig = StoatTransportConfigSchema
 
 /**
- * Default configuration for Logger instances
+ * Default configuration for Logger transport instances
  *
  * @property {LogLevel} level - Default log level set to Info.
  * @property {number} bufferSize - Default buffer size set to 10000.
@@ -64,7 +65,7 @@ export type StoatConfig = StoatConfigSchema
  * @property {boolean} compress - Default set to false, meaning logs are not compressed.
  * @property {boolean} prettyPrint - Default set to false, meaning logs are not pretty
  */
-export const DEFAULT_STOAT_CONFIG: StoatConfig = {
+export const DEFAULT_STOAT_TRANSPORT_CONFIG: StoatTransportConfig = {
   level: LOG_LEVEL.Info,
   bufferSize: 10000,
   flushInterval: 1000,
@@ -74,3 +75,9 @@ export const DEFAULT_STOAT_CONFIG: StoatConfig = {
   compress: false,
   prettyPrint: false,
 }
+
+/**
+ * Legacy export for backward compatibility
+ * @deprecated Use DEFAULT_STOAT_TRANSPORT_CONFIG instead
+ */
+export const DEFAULT_STOAT_CONFIG = DEFAULT_STOAT_TRANSPORT_CONFIG

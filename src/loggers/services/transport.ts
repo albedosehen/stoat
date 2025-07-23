@@ -3,10 +3,10 @@
  * @module
  */
 
-import type { Timestamp } from '../types/brands.ts'
-import type { LogLevelName } from '../types/logLevels.ts'
-import type { StoatContext } from '../stoat/context.ts'
-import type { StructuredLogEntry } from '../loggers/structured-log-entry.ts'
+import type { Timestamp } from '../../types/brands.ts'
+import type { LogLevelName } from '../../types/logLevels.ts'
+import type { StoatContext } from '../../stoat/context.ts'
+import type { StructuredLogEntry } from '../../loggers/structured-log-entry.ts'
 
 /**
  * Transport destination type
@@ -156,7 +156,7 @@ export interface Transport {
  * @class BaseTransport
  * @param {BaseTransportConfig} config - Configuration for the transport
  * @throws {TransportConfigError} - If configuration is invalid
- * @throws {TransportError} - For general transport errors
+ * @throws {TransportErrorBase} - For general transport errors
  * @throws {Error} - For unexpected errors
  */
 export abstract class BaseTransport implements Transport {
@@ -489,13 +489,13 @@ export abstract class BaseTransport implements Transport {
  * @param {string} message - Error message
  * @param {string} transport - Name of the transport where the error occurred
  * @param {Error} [cause] - Optional cause of the error
- * @throws {TransportError} - For transport-specific errors
+ * @throws {TransportErrorBase} - For transport-specific errors
  * @throws {TransportConfigError} - For configuration-related errors
  * @throws {TransportWriteError} - For write operation errors
  * @throws {Error} - For unexpected errors
  * @class
  */
-export class TransportError extends Error {
+export class TransportErrorBase extends Error {
   constructor(
     message: string,
     public readonly transport: string,
@@ -512,12 +512,12 @@ export class TransportError extends Error {
  * Used when transport configuration is invalid or missing required fields.
  * Provides specific error handling for transport configuration issues.
  *
- * @extends {TransportError}
+ * @extends {TransportErrorBase}
  * @param {string} transport - Name of the transport where the error occurred
  * @param {string} configIssue - Description of the configuration issue
  * @param {Error} [cause] - Optional cause of the error
  */
-export class TransportConfigError extends TransportError {
+export class TransportConfigError extends TransportErrorBase {
   constructor(transport: string, configIssue: string, cause?: Error) {
     super(`Transport configuration error: ${configIssue}`, transport, cause)
     this.name = 'TransportConfigError'
@@ -530,12 +530,12 @@ export class TransportConfigError extends TransportError {
  * Used when a write operation fails for a transport.
  * Provides specific error handling for write-related issues.
  *
- * @extends {TransportError}
+ * @extends {TransportErrorBase}
  * @param {string} transport - Name of the transport where the error occurred
  * @param {string} writeError - Description of the write error
  * @param {Error} [cause] - Optional cause of the error
  */
-export class TransportWriteError extends TransportError {
+export class TransportWriteError extends TransportErrorBase {
   constructor(transport: string, writeError: string, cause?: Error) {
     super(`Transport write error: ${writeError}`, transport, cause)
     this.name = 'TransportWriteError'

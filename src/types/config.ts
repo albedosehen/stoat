@@ -71,7 +71,44 @@ export interface ErrorBoundaryConfig {
   maxErrorsPerMinute?: number
 }
 
-// Main Stoat configuration interface
+/**
+ * Main Stoat core configuration interface
+ * Defines the comprehensive configuration structure for the Stoat logging system.
+ * This interface encompasses all major subsystems including transports, security,
+ * performance, observability, context management, plugins, and error boundaries.
+ */
+export interface StoatCoreConfig {
+  /** Minimum log level to process */
+  level: LogLevelName
+  /** Logger instance name identifier */
+  name?: string
+  /** Logger version identifier */
+  version?: string
+  /** Array of transport configurations for output destinations */
+  transports: TransportConfig[]
+  /** Security and data protection configuration */
+  security: SecurityConfig
+  /** Performance optimization and monitoring configuration */
+  performance: PerformanceConfig
+  /** OpenTelemetry and observability integration configuration */
+  observability: ObservabilityConfig
+  /** Context management and correlation configuration */
+  context: ContextConfig
+  /** Plugin system configuration */
+  plugins: PluginConfig
+  /** Error boundary and fault tolerance configuration */
+  errorBoundary: ErrorBoundaryConfig
+  /** Development environment specific settings */
+  development?: Record<string, unknown>
+  /** Production environment specific settings */
+  production?: Record<string, unknown>
+  /** Testing environment specific settings */
+  testing?: Record<string, unknown>
+}
+
+/**
+ * Main Stoat configuration interface - alias for backwards compatibility
+ */
 export interface StoatConfig {
   level: LogLevelName
   name?: string
@@ -87,3 +124,9 @@ export interface StoatConfig {
   production?: Record<string, unknown>
   testing?: Record<string, unknown>
 }
+
+// Re-export logger-specific config types for unified factory
+export type { BasicConfig } from '../loggers/basic-logger.ts'
+export type { AsyncConfig } from '../loggers/async-logger.ts'
+export type { StructuredConfig } from '../loggers/structured-logger.ts'
+export type { HybridConfig } from '../loggers/hybrid-logger.ts'

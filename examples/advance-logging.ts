@@ -1,10 +1,9 @@
 /**
- * Development Usage Examples
- * Demonstrates stoat logger features useful during development and debugging
+ * Advanced Stoat Logger Example
+ * Demonstrates advanced logging features through unified stoat.create() interface
  */
 
-import { stoat } from '../mod.ts'
-import { createRequestId } from '../src/types/brands.ts'
+import { stoat, createRequestId } from '../mod.ts'
 
 const mainLogger = stoat.create({
   level: 'info',
@@ -12,11 +11,9 @@ const mainLogger = stoat.create({
   module: 'dev-examples'
 })
 
-mainLogger.info('1. Development Logger Setup')
-
 const devLogger = stoat.create({
-  level: 'trace', // Most verbose level
-  prettyPrint: true, // JSON format for readability
+  level: 'trace',
+  prettyPrint: true,
   module: 'development',
   metadata: {
     developer: 'John Doe',
@@ -33,7 +30,7 @@ devLogger.debug('Debug information', {
 devLogger.info('Application initialized successfully')
 
 mainLogger.info('---')
-mainLogger.info('2. Component-Based Logging')
+mainLogger.info('Component-Based Logging')
 
 const appLogger = stoat.create({
   level: 'debug',
@@ -67,7 +64,7 @@ apiLogger.debug('Processing API request')
 apiLogger.info('API response sent', { statusCode: 200, responseTime: 12 })
 
 mainLogger.info('---')
-mainLogger.info('3. Error Debugging')
+mainLogger.info('Error Debugging')
 
 const errorLogger = stoat.create({
   level: 'debug',
@@ -85,7 +82,6 @@ try {
       throw new Error('Email is required')
     }
     
-    // Simulate validation error
     if (!userData.email.includes('@')) {
       throw new Error('Invalid email format')
     }
@@ -106,7 +102,7 @@ try {
     id: 'req-123',
     userData: {
       id: '456',
-      email: 'invalid-email' // Missing @
+      email: 'invalid-email'
     }
   }
 
@@ -129,7 +125,7 @@ try {
 }
 
 mainLogger.info('---')
-mainLogger.info('4. Performance Profiling')
+mainLogger.info('Performance Profiling')
 
 const perfLogger = stoat.create({
   level: 'info',
@@ -161,7 +157,7 @@ await profiledFunction('data-processing', 75)
 
 mainLogger.info('---')
 
-mainLogger.info('5. Feature Flags & Conditional Logging')
+mainLogger.info('Feature Flags & Conditional Logging')
 
 const featureLogger = stoat.create({
   level: 'debug',
@@ -199,7 +195,7 @@ if (features.betaAnalytics) {
 }
 
 mainLogger.info('---')
-mainLogger.info('6. Request Tracing')
+mainLogger.info('Request Tracing')
 
 const tracingLogger = stoat.create({
   level: 'debug',
@@ -287,7 +283,7 @@ for (const testName of tests) {
 }
 
 mainLogger.info('---')
-mainLogger.info('8. Resource Monitoring')
+mainLogger.info('Resource Monitoring')
 
 const monitorLogger = stoat.create({
   level: 'info',
@@ -316,3 +312,5 @@ logResourceUsage('after-large-allocation')
 
 largeArray.length = 0
 logResourceUsage('after-cleanup')
+
+Deno.exit(0)

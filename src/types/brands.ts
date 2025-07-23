@@ -4,7 +4,7 @@
  */
 
 import { StructuredLogger } from '../loggers/structured-log-entry.ts'
-import type { StoatConfig } from '../stoat/config.ts'
+import type { StoatTransportConfig } from '../stoat/config.ts'
 
 // Base brand type for nominal typing
 declare const __brand: unique symbol
@@ -180,7 +180,7 @@ export type SerializerValue<T, K extends SerializerKey<T>> = T extends object ? 
  */
 export type PluginContext = {
   logger: StructuredLogger
-  config: StoatConfig
+  config: StoatTransportConfig
   timestamp: Timestamp
 }
 

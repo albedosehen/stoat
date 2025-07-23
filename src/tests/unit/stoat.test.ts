@@ -2,8 +2,9 @@ import { assert, assertEquals, assertExists, assertStringIncludes } from '@std/a
 import { afterEach, beforeEach, describe, it } from '@std/testing/bdd'
 import { assertSpyCalls, spy, stub } from '@std/testing/mock'
 import { stoat } from '../../stoat/stoat.ts'
-import { Timer } from '../../services/timer.ts'
-import { DEFAULT_STOAT_CONFIG, type StoatConfig } from '../../stoat/config.ts'
+import { StoatBasicLogger } from '../../loggers/basic-logger.ts'
+import { Timer } from '../../utils/timer.ts'
+import { DEFAULT_STOAT_CONFIG, type StoatTransportConfig } from '../../stoat/config.ts'
 import { LOG_LEVEL } from '../../types/log.ts'
 import { createRequestId } from '../../types/brands.ts'
 
@@ -15,7 +16,7 @@ const originalConsole = {
   log: console.log,
 }
 
-function createTestConfig(overrides?: Partial<StoatConfig>): StoatConfig {
+function createTestConfig(overrides?: Partial<StoatTransportConfig>): StoatTransportConfig {
   return {
     ...DEFAULT_STOAT_CONFIG,
     outputDir: './test-logs',
@@ -48,8 +49,8 @@ function restoreConsole() {
   Object.assign(console, originalConsole)
 }
 
-describe('STOAT Logger - Comprehensive Test Suite', () => {
-  let testLogger: stoat
+describe('StoatLogger - Comprehensive Test Suite', () => {
+  let testLogger: StoatBasicLogger
   let consoleSpies: ReturnType<typeof mockConsole>
 
   beforeEach(() => {
@@ -409,7 +410,7 @@ describe('STOAT Logger - Comprehensive Test Suite', () => {
       it('should include context fields in pretty-print output', () => {
         testLogger = stoat.create({ prettyPrint: true })
         const childLogger = testLogger.child({
-          symbol: 'AAPL',
+          symbol: 'NVDA',
           strategy: 'momentum',
           orderId: 'order-123',
         })
@@ -421,7 +422,7 @@ describe('STOAT Logger - Comprehensive Test Suite', () => {
         const parsed = JSON.parse(output)
 
         assertExists(parsed.context)
-        assertEquals(parsed.context.symbol, 'AAPL')
+        assertEquals(parsed.context.symbol, 'NVDA')
         assertEquals(parsed.context.strategy, 'momentum')
         assertEquals(parsed.context.orderId, 'order-123')
         assertExists(parsed.context.sessionId)
@@ -867,7 +868,7 @@ describe('STOAT Logger - Comprehensive Test Suite', () => {
     it('should format context with all fields', () => {
       const contextLogger = testLogger.child({
         orderId: 'order-123',
-        symbol: 'AAPL',
+        symbol: 'NVDA',
         strategy: 'momentum',
         agentId: 'agent-456',
         portfolioId: 'portfolio-789',
@@ -880,7 +881,7 @@ describe('STOAT Logger - Comprehensive Test Suite', () => {
       const logOutput = consoleSpies.info.calls[0].args[0]
 
       assertStringIncludes(logOutput, 'order:order-123')
-      assertStringIncludes(logOutput, 'symbol:AAPL')
+      assertStringIncludes(logOutput, 'symbol:NVDA')
       assertStringIncludes(logOutput, 'strategy:momentum')
       assertStringIncludes(logOutput, 'agent:agent-456')
       assertStringIncludes(logOutput, 'portfolio:portfolio-789')
@@ -1272,7 +1273,7 @@ describe('STOAT Logger - Comprehensive Test Suite', () => {
         const complexData = {
           order: {
             id: 'order-123',
-            symbol: 'AAPL',
+            symbol: 'NVDA',
             quantity: 100,
             price: 150.25,
             side: 'buy',
@@ -1295,7 +1296,7 @@ describe('STOAT Logger - Comprehensive Test Suite', () => {
         const output = consoleSpies.info.calls[0].args[0] as string
         const parsed = JSON.parse(output)
 
-        assertEquals(parsed.payload.order.symbol, 'AAPL')
+        assertEquals(parsed.payload.order.symbol, 'NVDA')
         assertEquals(parsed.payload.execution.venue, 'NYSE')
         assertEquals(parsed.payload.context.strategy, 'momentum')
       })
@@ -1310,7 +1311,7 @@ describe('STOAT Logger - Comprehensive Test Suite', () => {
           userId: 'user-123',
           accountId: 'acc-456',
           balance: 50000.00,
-          positions: ['AAPL', 'GOOGL', 'MSFT'],
+          positions: ['NVDA', 'GOOGL', 'MSFT'],
         }
 
         testLogger.info('Account data', dataWithSensitiveInfo)
@@ -1320,7 +1321,7 @@ describe('STOAT Logger - Comprehensive Test Suite', () => {
 
         // Should include the data (security filtering would be in transport layer)
         assertStringIncludes(output, 'user-123')
-        assertStringIncludes(output, 'AAPL')
+        assertStringIncludes(output, 'NVDA')
       })
 
       it('should handle circular references gracefully', () => {
@@ -1376,7 +1377,7 @@ describe('STOAT Logger - Comprehensive Test Suite', () => {
 
         const tradingLogger = testLogger.child({
           orderId: 'order-trading-123',
-          symbol: 'AAPL',
+          symbol: 'NVDA',
           strategy: 'momentum-v2',
           agentId: 'agent-trading-456',
           portfolioId: 'portfolio-789',
@@ -1394,7 +1395,7 @@ describe('STOAT Logger - Comprehensive Test Suite', () => {
         const parsed = JSON.parse(output)
 
         assertExists(parsed.context)
-        assertEquals(parsed.context.symbol, 'AAPL')
+        assertEquals(parsed.context.symbol, 'NVDA')
         assertEquals(parsed.context.strategy, 'momentum-v2')
         assertEquals(parsed.metadata.venue, 'NYSE')
       })

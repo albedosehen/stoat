@@ -26,7 +26,11 @@ export interface TransportBase {
 }
 
 // Console transport specific options
-export interface ConsoleTransport extends TransportBase {
+/**
+ * Console transport interface for configuration
+ * Defines the structure for console transport configuration in the transports array
+ */
+export interface ConsoleTransportInterface extends TransportBase {
   type: 'console'
   colors?: boolean
   prettyPrint?: boolean
@@ -67,9 +71,12 @@ export interface CustomTransport extends TransportBase {
   options?: Record<string, unknown>
 }
 
+// Backward compatibility type aliases
+export type ConsoleTransport = ConsoleTransportInterface
+
 // Union of all transport configurations
 export type TransportConfig =
-  | ConsoleTransport
+  | ConsoleTransportInterface
   | FileTransport
   | AsyncTransport
   | MemoryTransport

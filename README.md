@@ -2,7 +2,7 @@
 
 [![Build Status](https://img.shields.io/badge/Build-passing-brightgreen.svg)](https://github.com/albedosehen/stoat) [![Deno Version](https://img.shields.io/badge/Deno-v2.4.1-green)](https://deno.land/) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![JSR](https://jsr.io/badges/@albedosehen/stoat)](https://jsr.io/@albedosehen/stoat)
 
-The stoat logger is a simple, high-performance logging framework purpose-built for performance-critical applications, where observability, security, and reliability are paramount. The stoat logger is designed to handle high-throughput scenarios while maintaining a simple API.
+Stoat is a simple and modular logging framework with support for multiple transports.
 
 ---
 
@@ -18,7 +18,7 @@ Originally developed as a structured logging framework, the stoat logger now sup
 
 - **Structured Logging**: JSON-first, OpenTelemetry compatible
 - **Async Logging**: Zero-allocation paths for trading systems
-- **Fast Async Buffers**: Sub-millisecond logging for high-frequency trading
+- **Fast Async Buffers**: Sub-millisecond logging for low-footprint applications
 - **File System Integration**: Efficient file-based logging with rotation and archival
 - **Contextual Logging**: Support hierarchical logging, request correlation, trace/span IDs, and application context
 - **Child Loggers**: Create child loggers with inherited context
@@ -32,7 +32,7 @@ Originally developed as a structured logging framework, the stoat logger now sup
 
 ### Performance
 
-Stoat offers memory-efficient logging with zero-allocation paths for simple log entries, making it ideal for high-frequency trading systems. It supports automatic backpressure management and intelligent buffering to handle memory pressure without blocking.
+Stoat offers memory-efficient logging with zero-allocation paths for simple log entries, making it ideal for low-footprint applications. It supports automatic backpressure management and intelligent buffering to handle memory pressure without blocking.
 
 - **Backpressure Management**: Intelligent buffering and memory pressure detection
 - **Dynamic Log Levels**: Custom log levels with advanced management
@@ -101,7 +101,7 @@ const logEntry = structuredLogger.createLogEntry({
   message: 'Trade executed successfully',
   data: {
     orderId: 'ORD-123',
-    symbol: 'AAPL',
+    symbol: 'NVDA',
     quantity: 100,
     price: 150.25,
     venue: 'NYSE'
@@ -140,7 +140,7 @@ for (let i = 0; i < 10000; i++) {
     timestamp: new Date().toISOString(),
     level: 'info',
     levelValue: 30,
-    message: `High-frequency tick ${i}`,
+    message: `Low-footprint entry ${i}`,
     data: { tickId: i, latency: performance.now() }
   })
 }
@@ -212,7 +212,7 @@ import {
 // Compile-time type safety with branded types
 const traceId = createTraceId('trace-abc-123')
 const orderId = createOrderId('ORD-456')
-const symbol = createSymbol('AAPL')
+const symbol = createSymbol('NVDA')
 
 // Security classification
 const sensitiveData = markSensitive({
@@ -339,13 +339,13 @@ logger.info('Customer profile updated', {
 ### Async Logging Performance
 
 ```text
-High-Frequency Scenario (100,000 entries):
+Low-Footprint Scenario (100,000 entries):
 ├── Sync Logging:    ~2,847ms
 ├── Async Logging:   ~156ms    (18x faster)
 ├── Fast Path:       ~23ms     (124x faster)
 └── Memory Usage:    <50MB
 
-Trading Tick Processing (1M entries/sec):
+Data Processing (1M entries/sec):
 ├── Latency P50:     0.02ms
 ├── Latency P95:     0.08ms
 ├── Latency P99:     0.15ms
@@ -370,12 +370,12 @@ Comprehensive tests covering all aspects of the library:
 
 - **Core Functionality**: All logging levels, configuration, child loggers
 - **Structured Logging**: OpenTelemetry compatibility, custom serialization
-- **Async Performance**: High-frequency scenarios, backpressure handling
+- **Async Performance**: Low-footprint scenarios, backpressure handling
 - **Transport System**: Console, file, HTTP, custom transports
 - **Security**: Data sanitization, input validation, size limits
 - **Error Handling**: Graceful fallbacks, never-throw guarantees
 - **Memory Management**: Leak prevention, circular reference detection
-- **Trading Scenarios**: HFT optimizations, millisecond precision
+- **Low-Footprint Scenarios**: optimizations, millisecond precision
 
 ```bash
 # Run complete test suite

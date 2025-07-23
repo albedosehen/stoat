@@ -2,7 +2,7 @@
 import { assert, assertEquals, assertExists, assertGreater, assertStringIncludes } from '@std/assert'
 import { afterEach, beforeEach, describe, it } from '@std/testing/bdd'
 import { assertSpyCalls, type Spy, spy } from '@std/testing/mock'
-import { ConsoleTransport, type ConsoleTransportConfig, createConsoleTransport } from '../../services/console.ts'
+import { ConsoleTransport, type ConsoleTransportConfig, createConsoleTransport } from '../../loggers/services/mod.ts'
 import type { StructuredLogEntry } from '../../loggers/structured-log-entry.ts'
 import type { StoatContext } from '../../stoat/context.ts'
 import { createLogMessage, createSessionId, createSpanId, createTimestamp, createTraceId } from '../../types/brands.ts'
@@ -324,7 +324,7 @@ describe('Console Transport', () => {
         traceId: createTraceId('pretty-trace-123'),
         component: 'pretty-component',
         duration: 56.78,
-        data: { orderId: 'order-123', symbol: 'AAPL' },
+        data: { orderId: 'order-123', symbol: 'NVDA' },
       })
 
       await prettyTransport.write(entry)
@@ -497,7 +497,7 @@ describe('Console Transport', () => {
       const results = await consoleTransport.writeBatch(entries)
 
       assertEquals(results.length, 3)
-      results.forEach((result) => assert(result.success))
+      results.forEach((result: { success: boolean }) => assert(result.success))
 
       // Should have made one batched output call
       assertSpyCalls(consoleLogSpy, 1)

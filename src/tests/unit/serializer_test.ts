@@ -8,7 +8,7 @@ import {
   serialize,
   serializeFast,
   type SerializerConfig,
-} from '../../services/serializer.ts'
+} from '../../utils/serializer.ts'
 import { createOrderId, createSymbol, createTraceId } from '../../types/brands.ts'
 
 describe('Custom Serializer System', () => {
@@ -461,7 +461,7 @@ describe('Custom Serializer System', () => {
   describe('Custom Serializers', () => {
     it('should use built-in trading-specific serializers', () => {
       const tradeId = createOrderId('order-123')
-      const symbol = createSymbol('AAPL')
+      const symbol = createSymbol('NVDA')
       const traceId = createTraceId('trace-456')
 
       const tradeData = {
@@ -481,7 +481,7 @@ describe('Custom Serializer System', () => {
       assertEquals(resultObj.orderId.__type, 'orderId')
       assertEquals(resultObj.orderId.value, 'order-123')
       assertEquals(resultObj.symbol.__type, 'symbol')
-      assertEquals(resultObj.symbol.value, 'AAPL')
+      assertEquals(resultObj.symbol.value, 'NVDA')
       assertEquals(resultObj.traceId.__type, 'traceId')
       assertEquals(resultObj.traceId.value, 'trace-456')
     })

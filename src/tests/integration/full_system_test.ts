@@ -2,9 +2,9 @@ import { assert, assertEquals, assertExists, assertGreater } from '@std/assert'
 import { afterEach, describe, it } from '@std/testing/bdd'
 import { StructuredLogger } from '../../loggers/structured-log-entry.ts'
 import { type AsyncLoggerConfig, createAsyncLogger } from '../../loggers/async-logger.ts'
-import { ConsoleTransport } from '../../services/console.ts'
-import { createSerializer, serialize } from '../../services/serializer.ts'
-import { createCustomLevel, getGlobalLevelManager, LogLevelManager } from '../../services/mod.ts'
+import { ConsoleTransport } from '../../loggers/services/mod.ts'
+import { createSerializer, serialize } from '../../utils/serializer.ts'
+import { createCustomLevel, getGlobalLevelManager, LogLevelManager } from '../../loggers/services/mod.ts'
 import { DEFAULT_CONFIGS } from '../../types/defaults.ts'
 import { LOG_LEVEL_VALUES } from '../../types/logLevels.ts'
 import { validateConfig } from '../../types/validation.ts'
@@ -82,7 +82,7 @@ describe('Full System Integration Tests', () => {
       })
 
       const tradeId = createOrderId('order-12345')
-      const symbol = createSymbol('AAPL')
+      const symbol = createSymbol('NVDA')
       const traceId = createTraceId('trace-abcdef123456')
       const spanId = createSpanId('span-789012')
       const strategyId = createStrategyId('momentum-v2')
@@ -222,14 +222,14 @@ describe('Full System Integration Tests', () => {
       // Simulate high-frequency trading scenario
       const promises = []
       for (let i = 0; i < 100; i++) {
-        const orderId = createOrderId(`hft-order-${i}`)
-        const symbol = createSymbol(i % 2 === 0 ? 'AAPL' : 'GOOGL')
+        const orderId = createOrderId(`low-footprint-order-${i}`)
+        const symbol = createSymbol(i % 2 === 0 ? 'NVDA' : 'GOOGL')
 
         // Create proper structured log entry
         const tempLogger = new StructuredLogger()
         const logEntry = tempLogger.createLogEntry({
           level: 'info',
-          message: `HFT order ${i} processed`,
+          message: `Low-footprint order ${i} processed`,
           data: {
             orderId: orderId,
             symbol: symbol,
@@ -357,7 +357,7 @@ describe('Full System Integration Tests', () => {
           dayPnL: 2500.50,
           positions: [
             {
-              symbol: createSymbol('AAPL'),
+              symbol: createSymbol('NVDA'),
               quantity: 1000,
               avgPrice: 150.25,
               pnl: 1250.00,
@@ -383,7 +383,7 @@ describe('Full System Integration Tests', () => {
         realTimeData: {
           timestamp: new Date(),
           marketData: new Map([
-            ['AAPL', { price: 151.50, volume: 25000 }],
+            ['NVDA', { price: 151.50, volume: 25000 }],
             ['GOOGL', { price: 2815.25, volume: 8500 }],
           ]),
           orderBook: new Set(['buy-001', 'sell-002', 'buy-003']),
@@ -690,7 +690,7 @@ describe('Full System Integration Tests', () => {
           timestamp: createTimestamp(new Date().toISOString()),
           data: {
             orderId: createOrderId(`hv-${i}`),
-            symbol: createSymbol(['AAPL', 'GOOGL', 'MSFT', 'TSLA'][i % 4]),
+            symbol: createSymbol(['NVDA', 'GOOGL', 'MSFT', 'TSLA'][i % 4]),
             price: 100 + Math.random() * 500,
             volume: Math.floor(Math.random() * 10000),
             timestamp: Date.now(),

@@ -92,7 +92,7 @@ describe('Structured Logging System', () => {
     it('should create entry with data payload', () => {
       const testData = {
         orderId: 'order-123',
-        symbol: 'AAPL',
+        symbol: 'NVDA',
         quantity: 100,
         price: 150.25,
       }

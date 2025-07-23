@@ -1,8 +1,8 @@
 import { assert, assertEquals, assertExists, assertGreater } from '@std/assert'
 import { describe, it } from '@std/testing/bdd'
 import { createStructuredEntry, StructuredLogger } from '../../loggers/structured-log-entry.ts'
-import { createSerializer, CustomSerializerEngine, serialize, serializeFast } from '../../services/serializer.ts'
-import { createCustomLevel, getGlobalLevelManager, LogLevelManager } from '../../services/mod.ts'
+import { createSerializer, CustomSerializerEngine, serialize, serializeFast } from '../../utils/serializer.ts'
+import { createCustomLevel, getGlobalLevelManager, LogLevelManager } from '../../loggers/services/mod.ts'
 import { DEFAULT_CONFIGS } from '../../types/defaults.ts'
 import { validateConfig } from '../../types/validation.ts'
 import {
@@ -33,7 +33,7 @@ describe('Minimal Integration Tests', () => {
       // Create trading data with branded types
       const tradeData = {
         orderId: createOrderId('trade-12345'),
-        symbol: createSymbol('AAPL'),
+        symbol: createSymbol('NVDA'),
         price: 150.25,
         quantity: 100,
         timestamp: new Date(),
@@ -133,7 +133,7 @@ describe('Minimal Integration Tests', () => {
           totalValue: 1000000.00,
           positions: [
             {
-              symbol: createSymbol('AAPL'),
+              symbol: createSymbol('NVDA'),
               quantity: 1000,
               price: 150.00,
             },

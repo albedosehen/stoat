@@ -1,6 +1,5 @@
 import { type MemoryDelta } from '../types/memory.ts'
 import { type PerformanceMetrics } from '../types/metrics.ts'
-import { type StoatContext } from '../stoat/context.ts'
 
 /**
  * Timer class for performance tracking in high-performance logging
@@ -15,7 +14,6 @@ export class Timer {
 
   constructor(
     private operation: string,
-    private context: StoatContext,
   ) {
     this.startTime = performance.now()
     this.memoryStart = this.getMemoryUsage()

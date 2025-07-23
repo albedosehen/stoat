@@ -3,55 +3,15 @@
  * @module
  */
 
-export {
-  AsyncTransportError,
-  BufferOverflowError,
-  CircularReferenceError,
-  ConfigurationError,
-  DataRedactionError,
-  EnvironmentConfigError,
-  ErrorBoundary,
-  FileTransportError,
-  InputSanitizationError,
-  PerformanceError,
-  TransportError,
-  PluginError,
-  RateLimitExceededError,
-  SchemaValidationError,
-  SecurityError,
-  SerializationError,
-  StoatError,
-  ValidationError,
-  createErrorContext,
-  type StoatErrorContext,
-  type ErrorBoundaryConfig,
-  type ErrorBoundaryHandler,
-} from './src/errors/errors.ts'
+export * from './src/loggers/mod.ts'
 
-export {
-  AsyncLogger,
-  createAsyncLogger,
-  getAsyncConfig,
-  ASYNC_CONFIGS,
-  type AsyncConfig,
-  type AsyncLoggerConfig,
-  type AsyncMetrics,
-  type BufferEntry,
-  type FlushStrategy,
-} from './src/loggers/async-logger.ts'
+export * from './src/types/mod.ts'
 
-export {
-  StructuredLogger,
-  createStructuredEntry,
-  createStructuredLogger,
-  serializeLogEntry,
-  type FieldMapping,
-  type SerializationOptions,
-  type StructuredError,
-  type StructuredLogEntry,
-}from './src/loggers/structured-log-entry.ts'
+export * from './src/utils/mod.ts'
 
-export * from './src/services/mod.ts'
+export * from './src/errors/errors.ts'
 
-export { stoat } from './src/stoat/stoat.ts'
+export * from './src/stoat/mod.ts'
 
+// Default export
+export { stoat as default } from './src/stoat/stoat.ts'

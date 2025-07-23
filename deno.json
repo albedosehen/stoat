@@ -2,12 +2,53 @@
 	"lock": true,
 
 	"name": "@albedosehen/stoat",
-	"version": "0.1.0",
-	"license": "MIT",
+  "version": "1.0.0",
+  "description": "Stoat is a simple and modular logging framework with support for multiple transports.",
+  "author": "Shon Thomas",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/albedosehen/stoat"
+  },
+  "homepage": "https://github.com/albedosehen/stoat",
+  "keywords": [
+    "logging",
+    "structured-logging",
+    "async-logging",
+    "log",
+    "logger",
+    "framework",
+    "deno",
+    "typescript",
+    "opentelemetry",
+    "otel",
+    "observability",
+    "tracing",
+    "monitoring",
+    "performance",
+    "json",
+    "transport",
+    "transports",
+    "buffer",
+    "serialization",
+    "context",
+    "child-logger",
+    "microservices",
+    "distributed",
+    "sanitization",
+    "security"
+  ],
 	"exports": {
-		".": "./mod.ts"
+		".": "./mod.ts",
+		"./loggers": "./src/loggers/mod.ts",
+		"./types": "./src/types/mod.ts",
+		"./utils": "./src/utils/mod.ts",
+		"./errors": "./src/errors/errors.ts",
+		"./stoat": "./src/mod.ts"
 	},
-
+	"compilerOptions": {
+		"strict": true
+	},
 	"tasks": {
 		"test": "deno test --allow-read --allow-write --allow-net --allow-sys -q",
 		"test:watch": "deno test --allow-read --allow-write --allow-net --allow-sys --watch -q",
@@ -26,17 +67,9 @@
 		"fmt": "deno fmt",
 		"fmt:check": "deno fmt --check"
 	},
-
-	"compilerOptions": {
-		"strict": true
-	},
-
 	"lint": {
 		"include": ["src/"],
-		"exclude": [
-			"src/fixtures/**/*.ts",
-			"dist/"
-		],
+		"exclude": [],
 		"rules": {
 			"tags": ["recommended"],
 			"include": [
@@ -67,9 +100,7 @@
 		"singleQuote": true,
 		"proseWrap": "preserve",
 		"include": ["src/"],
-		"exclude": [
-			"src/fixtures/**/*.ts"
-		]
+		"exclude": []
 	},
 
 	"imports": {
@@ -80,6 +111,5 @@
 		"@std/streams": "jsr:@std/streams@^1.0.0",
 		"@std/async": "jsr:@std/async@^1.0.0"
 	},
-
-	"exclude": ["dist/"]
+	"exclude": []
 }

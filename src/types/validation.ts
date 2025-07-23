@@ -9,13 +9,13 @@ import { TRANSPORT_TYPES } from './transports.ts'
 import type { LogLevelName } from './logLevels.ts'
 import type {
   AsyncTransport,
-  ConsoleTransport,
+  ConsoleTransportInterface,
   FileTransport,
   MemoryTransport,
   TransportConfig,
   TransportType,
 } from './transports.ts'
-import type { StoatConfig } from './config.ts'
+import type { StoatCoreConfig } from './config.ts'
 
 // Custom error class for configuration validation
 export class ConfigValidationError extends Error {
@@ -131,12 +131,12 @@ function applyTransportDefaults(transport: TransportConfig): TransportConfig {
 
   switch (transport.type) {
     case 'console': {
-      const consoleTransport = base as ConsoleTransport
+      const consoleTransport = base as ConsoleTransportInterface
       return {
         ...base,
         colors: consoleTransport.colors ?? true,
         prettyPrint: consoleTransport.prettyPrint ?? false,
-      } as ConsoleTransport
+      } as ConsoleTransportInterface
     }
 
     case 'file': {
@@ -176,8 +176,8 @@ function applyTransportDefaults(transport: TransportConfig): TransportConfig {
   }
 }
 
-function applyConfigDefaults(config: StoatConfig): StoatConfig {
-  const defaults: StoatConfig = {
+function applyConfigDefaults(config: StoatCoreConfig): StoatCoreConfig {
+  const defaults: StoatCoreConfig = {
     level: 'info',
     transports: [{ type: 'console', colors: true, prettyPrint: false }],
     security: {
@@ -262,7 +262,7 @@ function applyConfigDefaults(config: StoatConfig): StoatConfig {
 }
 
 // Configuration validation and normalization utilities
-export function validateConfig(config: unknown): StoatConfig {
+export function validateConfig(config: unknown): StoatCoreConfig {
   const issues: string[] = []
 
   if (!config || typeof config !== 'object') {
@@ -320,7 +320,7 @@ export function validateConfig(config: unknown): StoatConfig {
     throw new ConfigValidationError('Configuration validation failed', issues)
   }
 
-  return applyConfigDefaults(c as unknown as StoatConfig)
+  return applyConfigDefaults(c as unknown as StoatCoreConfig)
 }
 
 export { applyConfigDefaults, applyTransportDefaults, isValidLogLevel, isValidTransportType, validateTransport }

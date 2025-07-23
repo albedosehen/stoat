@@ -1,10 +1,10 @@
 import { assert, assertEquals, assertExists, assertGreater } from '@std/assert'
 import { describe, it } from '@std/testing/bdd'
 import { createStructuredEntry, StructuredLogger } from '../../loggers/structured-log-entry.ts'
-import { AsyncLogger } from '../../loggers/async-logger.ts'
-import { ConsoleTransport } from '../../services/console.ts'
-import { createSerializer, CustomSerializerEngine } from '../../services/serializer.ts'
-import { createCustomLevel, getGlobalLevelManager, LogLevelManager } from '../../services/mod.ts'
+import { StoatAsyncLogger } from '../../loggers/async-logger.ts'
+import { ConsoleTransportService } from '../../loggers/services/console.ts'
+import { createSerializer, CustomSerializerEngine } from '../../utils/serializer.ts'
+import { createCustomLevel, getGlobalLevelManager, LogLevelManager } from '../../loggers/services/log-level-manager.ts'
 import { DEFAULT_CONFIGS } from '../../types/defaults.ts'
 import { LOG_LEVEL_VALUES } from '../../types/logLevels.ts'
 import { validateConfig } from '../../types/validation.ts'
@@ -44,7 +44,7 @@ describe('Core System Integration Tests', () => {
 
       const tradeData = {
         orderId: createOrderId('trade-12345'),
-        symbol: createSymbol('AAPL'),
+        symbol: createSymbol('NVDA'),
         price: 150.25,
         quantity: 100,
         timestamp: new Date(),
@@ -106,7 +106,7 @@ describe('Core System Integration Tests', () => {
     })
 
     it('should integrate async logging with serialization', async () => {
-      const asyncLogger = new AsyncLogger({
+      const asyncLogger = new StoatAsyncLogger({
         bufferSize: 100,
         maxBufferSize: 500,
         flushInterval: 50,
@@ -169,7 +169,7 @@ describe('Core System Integration Tests', () => {
     })
 
     it('should integrate console transport with structured data', async () => {
-      const transport = new ConsoleTransport({
+      const transport = new ConsoleTransportService({
         destination: 'console',
         enabled: true,
         minLevel: 'debug',
@@ -264,7 +264,7 @@ describe('Core System Integration Tests', () => {
           totalValue: 1000000.00,
           positions: [
             {
-              symbol: createSymbol('AAPL'),
+              symbol: createSymbol('NVDA'),
               quantity: 1000,
               avgPrice: 150.00,
               currentPrice: 155.25,

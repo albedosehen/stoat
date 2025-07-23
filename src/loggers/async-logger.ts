@@ -132,9 +132,9 @@ export interface AsyncMetrics {
 export type FlushStrategy = 'immediate' | 'batch' | 'interval' | 'hybrid'
 
 /**
- * Async Logger class for handling asynchronous logging
+ * StoatAsyncLogger class for handling asynchronous logging
  *
- * This class implements a high-performance logging system.
+ * This class implements a high-performance logging system for the unified Stoat architecture.
  *
  * @class
  * @param {AsyncConfig} config - Configuration options for the async logger
@@ -142,7 +142,7 @@ export type FlushStrategy = 'immediate' | 'batch' | 'interval' | 'hybrid'
  * @throws {Error} If the logger is destroyed and an attempt to log is made
  *
  * @example
- * const logger = new AsyncLogger({
+ * const logger = new StoatAsyncLogger({
  *  bufferSize: 1000,
  *  maxBufferSize: 5000,
  *  flushInterval: 1000,
@@ -177,7 +177,7 @@ export type FlushStrategy = 'immediate' | 'batch' | 'interval' | 'hybrid'
  * const metrics = logger.getMetrics();
  * console.log(metrics);
  */
-export class AsyncLogger {
+export class StoatAsyncLogger {
   private buffer: BufferEntry[] = []
   private flushTimer: number | null = null
   private isDestroyed = false
@@ -287,14 +287,14 @@ export class AsyncLogger {
       this.metrics.errorCount++
       // TODO(@albedosehen): Consider this usecase further and whether it should be handled differently
       // Logger fallback to avoid any crashes
-      console.error('[STOAT AsyncLogger] Sync fallback failed:', error)
+      console.error('[StoatAsyncLogger] Sync fallback failed:', error)
     }
   }
 
   /**
    * Log an entry using the fast path
    *
-   * This method is optimized for high-frequency logging scenarios,
+   * This method is optimized for low-footprint logging scenarios,
    * using a pre-allocated buffer to minimize allocations.
    *
    * @param {StructuredLogEntry} entry - The log entry to be logged
@@ -513,7 +513,7 @@ export class AsyncLogger {
   }
 
   private shouldUseFastPath(entry: StructuredLogEntry): boolean {
-    // Use fast path for high-frequency, simple log entries
+    // Use fast path for low-footprint, simple log entries
     return !entry.error &&
       !entry.data &&
       entry.level !== 'fatal' &&
@@ -634,7 +634,7 @@ export class AsyncLogger {
    * Flush the fast buffer
    *
    * Flushes the fast buffer entries to their destination,
-   * ensuring that high-frequency logs are processed efficiently.
+   * ensuring that low-footprint logs are processed efficiently.
    *
    * @returns {Promise<void>}
    */
@@ -952,13 +952,13 @@ export const ASYNC_CONFIGS = {
  *
  * @param {AsyncConfig} config - Configuration options for the async logger
  * @param {Function} [syncCallback] - Optional synchronous callback for critical logging scenarios
- * @returns {AsyncLogger} An instance of the AsyncLogger
+ * @returns {StoatAsyncLogger} An instance of the StoatAsyncLogger
  */
 export function createAsyncLogger(
   config: AsyncConfig,
   syncCallback?: (entry: StructuredLogEntry) => void,
-): AsyncLogger {
-  return new AsyncLogger(config, syncCallback)
+): StoatAsyncLogger {
+  return new StoatAsyncLogger(config, syncCallback)
 }
 
 /**

@@ -1,184 +1,40 @@
 /**
- * Stoat logger - modern, multi-purpose logger for high-performance applications
+ * Basic logger implementation - encapsulates core Stoat logging functionality
  * @module
  */
+
 import { Timer } from '../utils/timer.ts'
 import { LOG_LEVEL, LOG_LEVEL_PRIORITY, type LogLevel } from '../types/log.ts'
-import { DEFAULT_STOAT_TRANSPORT_CONFIG, type StoatTransportConfig } from './config.ts'
-
-import { type StoatMessage } from './message.ts'
-import type { StoatContext } from './context.ts'
-// Import unified logger classes
-import { StoatBasicLogger, type BasicConfig } from '../loggers/basic-logger.ts'
-import { StoatAsyncLogger, type AsyncConfig } from '../loggers/async-logger.ts'
-import { StoatStructuredLogger, type StructuredConfig } from '../loggers/structured-logger.ts'
-import { StoatHybridLogger, type HybridConfig } from '../loggers/hybrid-logger.ts'
-import type { StructuredLogEntry } from '../loggers/structured-log-entry.ts'
+import { type StoatTransportConfig } from '../stoat/config.ts'
+import { type StoatMessage } from '../stoat/message.ts'
+import type { StoatContext } from '../stoat/context.ts'
 
 /**
- * Ultra-simple synchronous logger for low-footprint applications
- * Console-first with optional simple file appending - completely fire-and-forget
+ * Basic configuration for StoatBasicLogger
  */
-export class stoat {
+export interface BasicConfig extends StoatTransportConfig {
+  // Basic logger specific configurations (if any needed in the future)
+}
+
+/**
+ * StoatBasicLogger - Basic synchronous logging functionality
+ * 
+ * Encapsulates the current basic logging functionality from the original stoat class.
+ * Provides console-first logging with optional file output and comprehensive
+ * log level support with context management.
+ */
+export class StoatBasicLogger {
   private lastLoggedMessage: StoatMessage | null = null
 
-  private constructor(
-    private config: StoatTransportConfig,
+  /**
+   * Create a new StoatBasicLogger instance
+   * @param config Logger configuration
+   * @param context Logger context for observability
+   */
+  constructor(
+    private config: BasicConfig,
     private context: StoatContext,
   ) {}
-
-  /**
-   * Unified factory method with overloaded signatures for different logger types
-   *
-   * @overload
-   * @param config Basic logger configuration
-   * @returns StoatBasicLogger instance
-   */
-  static create(config: { type: 'basic' } & BasicConfig): StoatBasicLogger
-
-  /**
-   * @overload
-   * @param config Async logger configuration
-   * @returns StoatAsyncLogger instance
-   */
-  static create(config: { type: 'async' } & AsyncConfig): StoatAsyncLogger
-
-  /**
-   * @overload
-   * @param config Structured logger configuration
-   * @returns StoatStructuredLogger instance
-   */
-  static create(config: { type: 'structured' } & StructuredConfig): StoatStructuredLogger
-
-  /**
-   * @overload
-   * @param config Hybrid logger configuration
-   * @returns StoatHybridLogger instance
-   */
-  static create(config: { type: 'hybrid' } & HybridConfig): StoatHybridLogger
-
-  /**
-   * @overload
-   * @param config Legacy basic transport configuration (fallback)
-   * @returns StoatBasicLogger instance for backward compatibility
-   */
-  static create(config?: Partial<StoatTransportConfig>): StoatBasicLogger
-
-  /**
-   * Unified factory implementation with intelligent detection
-   * @param config Logger configuration with optional type specification
-   * @returns Appropriate logger instance based on configuration
-   */
-  static create(
-    config?: Partial<StoatTransportConfig> |
-             ({ type: 'basic' } & BasicConfig) |
-             ({ type: 'async' } & AsyncConfig) |
-             ({ type: 'structured' } & StructuredConfig) |
-             ({ type: 'hybrid' } & HybridConfig)
-  ): StoatBasicLogger | StoatAsyncLogger | StoatStructuredLogger | StoatHybridLogger {
-    // Handle legacy basic logger creation (backward compatibility)
-    if (!config || !('type' in config)) {
-      // Use existing implementation for basic logger
-      const mergedConfig: StoatTransportConfig = {
-        ...DEFAULT_STOAT_TRANSPORT_CONFIG,
-        ...config,
-      }
-
-      // Create default context with module and metadata from config
-      const context: StoatContext = {
-        sessionId: crypto.randomUUID(),
-        ...(mergedConfig.module ? { module: mergedConfig.module } : {}),
-        ...(mergedConfig.metadata ? { metadata: mergedConfig.metadata } : {}),
-      }
-
-      // Only create output directory if outputDir is specified
-      if (mergedConfig.outputDir) {
-        try {
-          Deno.mkdirSync(mergedConfig.outputDir as string, { recursive: true })
-        } catch (error) {
-          if (!(error instanceof Deno.errors.AlreadyExists)) {
-            // Silent fail - console logging will still work
-          }
-        }
-      }
-
-      return new StoatBasicLogger(mergedConfig as BasicConfig, context)
-    }
-
-    // Handle typed logger creation
-    switch (config.type) {
-      case 'basic': {
-        const { type: _type, ...basicConfig } = config
-        const mergedConfig: BasicConfig = {
-          ...DEFAULT_STOAT_TRANSPORT_CONFIG,
-          ...basicConfig,
-        }
-
-        const context: StoatContext = {
-          sessionId: crypto.randomUUID(),
-          ...(mergedConfig.module ? { module: mergedConfig.module } : {}),
-          ...(mergedConfig.metadata ? { metadata: mergedConfig.metadata } : {}),
-        }
-
-        // Create output directory if needed
-        if (mergedConfig.outputDir) {
-          try {
-            Deno.mkdirSync(mergedConfig.outputDir as string, { recursive: true })
-          } catch (error) {
-            if (!(error instanceof Deno.errors.AlreadyExists)) {
-              // Silent fail
-            }
-          }
-        }
-
-        return new StoatBasicLogger(mergedConfig, context)
-      }
-
-      case 'async': {
-        const { type: _type, ...asyncConfig } = config
-
-        // Create sync callback for async logger that outputs to console
-        const syncCallback = (entry: StructuredLogEntry) => {
-          const serialized = JSON.stringify(entry)
-          switch (entry.level) {
-            case 'trace':
-            case 'debug':
-              console.debug(serialized)
-              break
-            case 'info':
-              console.info(serialized)
-              break
-            case 'warn':
-              console.warn(serialized)
-              break
-            case 'error':
-            case 'fatal':
-              console.error(serialized)
-              break
-            default:
-              console.log(serialized)
-          }
-        }
-
-        return new StoatAsyncLogger(asyncConfig, syncCallback)
-      }
-
-      case 'structured': {
-        const { type: _type, ...structuredConfig } = config
-        return new StoatStructuredLogger(structuredConfig)
-      }
-
-      case 'hybrid': {
-        const { type: _type, ...hybridConfig } = config
-        return new StoatHybridLogger(hybridConfig)
-      }
-
-      default: {
-        const unknownConfig = config as { type: string }
-        throw new Error(`Unknown logger type: ${unknownConfig.type}`)
-      }
-    }
-  }
 
   /**
    * Create a child logger with inherited context and optional config overrides
@@ -186,13 +42,13 @@ export class stoat {
    * @returns New logger instance with merged context and config
    */
   child(
-    options: Partial<StoatContext & Pick<StoatTransportConfig, 'outputDir' | 'prettyPrint' | 'module' | 'metadata'>>,
-  ): stoat {
+    options: Partial<StoatContext & Pick<BasicConfig, 'outputDir' | 'prettyPrint' | 'module' | 'metadata'>>,
+  ): StoatBasicLogger {
     // Separate context and config options
     const { outputDir, prettyPrint, module, metadata, ...contextOptions } = options
 
     // Create child config, inheriting from parent but allowing overrides
-    const childConfig: StoatTransportConfig = {
+    const childConfig: BasicConfig = {
       ...this.config,
     }
 
@@ -220,7 +76,7 @@ export class stoat {
       ...(childConfig.metadata ? { metadata: childConfig.metadata } : {}),
     }
 
-    return new stoat(childConfig, childContext)
+    return new StoatBasicLogger(childConfig, childContext)
   }
 
   /**
@@ -319,7 +175,7 @@ export class stoat {
    * No-op flush method for API compatibility (no buffer to flush)
    */
   flush(): void {
-    // No-op - no buffer to flush in ultra-simple implementation
+    // No-op - no buffer to flush in basic implementation
   }
 
   /**
@@ -327,6 +183,22 @@ export class stoat {
    */
   close(): void {
     // No-op - no background processes or resources to cleanup
+  }
+
+  /**
+   * Get the current logger configuration
+   * @returns Current logger configuration
+   */
+  getConfig(): BasicConfig {
+    return { ...this.config }
+  }
+
+  /**
+   * Get the current logger context
+   * @returns Current logger context
+   */
+  getContext(): StoatContext {
+    return { ...this.context }
   }
 
   /**

@@ -1,9 +1,9 @@
 import { assert, assertEquals, assertExists, assertGreater } from '@std/assert'
 import { describe, it } from '@std/testing/bdd'
 import { createStructuredEntry, StructuredLogger } from '../../loggers/structured-log-entry.ts'
-import { AsyncLogger } from '../../loggers/async-logger.ts'
-import { createSerializer, CustomSerializerEngine, serialize, serializeFast } from '../../services/serializer.ts'
-import { createCustomLevel, getGlobalLevelManager, LogLevelManager } from '../../services/mod.ts'
+import { StoatAsyncLogger } from '../../loggers/async-logger.ts'
+import { createSerializer, CustomSerializerEngine, serialize, serializeFast } from '../../utils/serializer.ts'
+import { createCustomLevel, getGlobalLevelManager, LogLevelManager } from '../../loggers/services/log-level-manager.ts'
 import { DEFAULT_CONFIGS } from '../../types/defaults.ts'
 import { validateConfig } from '../../types/validation.ts'
 import {
@@ -35,7 +35,7 @@ describe('Basic Integration Tests', () => {
       // Create trading data with branded types
       const tradeData = {
         orderId: createOrderId('trade-12345'),
-        symbol: createSymbol('AAPL'),
+        symbol: createSymbol('NVDA'),
         price: 150.25,
         quantity: 100,
         timestamp: new Date(),
@@ -98,7 +98,7 @@ describe('Basic Integration Tests', () => {
 
     it('should integrate async logging with basic functionality', async () => {
       // Create async logger with complete config
-      const asyncLogger = new AsyncLogger({
+      const asyncLogger = new StoatAsyncLogger({
         bufferSize: 10,
         maxBufferSize: 50,
         flushInterval: 50,
@@ -189,7 +189,7 @@ describe('Basic Integration Tests', () => {
           totalValue: 1000000.00,
           positions: [
             {
-              symbol: createSymbol('AAPL'),
+              symbol: createSymbol('NVDA'),
               quantity: 1000,
               price: 150.00,
             },

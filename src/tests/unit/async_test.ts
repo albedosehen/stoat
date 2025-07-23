@@ -4,7 +4,7 @@ import { assertSpyCalls, type Spy, spy } from '@std/testing/mock'
 import {
   ASYNC_CONFIGS,
   type AsyncConfig,
-  AsyncLogger,
+  StoatAsyncLogger as AsyncLogger,
   createAsyncLogger,
   getAsyncConfig,
 } from '../../loggers/async-logger.ts'
@@ -111,7 +111,7 @@ describe('Async Logging System', () => {
       const factoryLogger = trackLogger(createAsyncLogger(testConfig, syncCallbackSpy))
 
       assertExists(factoryLogger)
-      assertEquals(factoryLogger.constructor.name, 'AsyncLogger')
+      assertEquals(factoryLogger.constructor.name, 'StoatAsyncLogger')
     })
   })
 
@@ -442,7 +442,7 @@ describe('Async Logging System', () => {
       const tradingLogger = trackLogger(createAsyncLogger(ASYNC_CONFIGS.trading, syncCallbackSpy))
 
       assertExists(tradingLogger)
-      assertEquals(tradingLogger.constructor.name, 'AsyncLogger')
+      assertEquals(tradingLogger.constructor.name, 'StoatAsyncLogger')
     })
   })
 
@@ -554,7 +554,7 @@ describe('Async Logging System', () => {
         component: 'order-processor',
         data: {
           orderId: 'order-abc-123',
-          symbol: 'AAPL',
+          symbol: 'NVDA',
           quantity: 100,
         },
         context: {
@@ -580,17 +580,20 @@ describe('Async Logging System', () => {
       assertEquals(syncCallbackSpy.calls[0].args[0], complexEntry)
     })
 
-    it('should handle high-frequency trading scenarios', async () => {
-      const hftConfig = ASYNC_CONFIGS.trading
-      const hftLogger = trackLogger(new AsyncLogger(hftConfig, syncCallbackSpy))
+    it('should handle low-footprint scenarios', async () => {
+      const lowFootprintConfig = ASYNC_CONFIGS.trading
+      const lowFootprintLogger = trackLogger(new AsyncLogger(lowFootprintConfig, syncCallbackSpy))
 
       const startTime = performance.now()
 
-      // Simulate high-frequency trading messages
-      const hftEntries = Array.from({ length: 1000 }, (_, i) => createTestEntry('info', `HFT trade ${i}`))
+      // Simulate low-footprint messages
+      const lowFootprintEntries = Array.from(
+        { length: 1000 },
+        (_, i) => createTestEntry('info', `Low-footprint entry ${i}`),
+      )
 
-      for (const entry of hftEntries) {
-        await hftLogger.log(entry)
+      for (const entry of lowFootprintEntries) {
+        await lowFootprintLogger.log(entry)
       }
 
       const endTime = performance.now()
@@ -599,9 +602,9 @@ describe('Async Logging System', () => {
       // Should handle 1000 entries very quickly
       assert(duration < 500) // 500ms
 
-      await hftLogger.flush()
+      await lowFootprintLogger.flush()
 
-      const metrics = hftLogger.getMetrics()
+      const metrics = lowFootprintLogger.getMetrics()
       assertGreaterOrEqual(metrics.entriesFlushed, 1000)
     })
   })

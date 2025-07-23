@@ -1,5 +1,5 @@
 /**
- * Structured error types for STOAT logger with proper error boundaries
+ * Structured error types for Stoatlogger with proper error boundaries
  * Provides comprehensive error handling for modern logging scenarios
  * @module
  */
@@ -298,7 +298,7 @@ export class PluginError extends StoatError {
 export type ErrorBoundaryHandler = (error: StoatError) => void | Promise<void>
 
 // Error boundary configuration
-export interface ErrorBoundaryConfig {
+export interface ErrorBoundarySetting {
   onError?: ErrorBoundaryHandler
   onSecurityError?: ErrorBoundaryHandler
   onCriticalError?: ErrorBoundaryHandler
@@ -308,10 +308,10 @@ export interface ErrorBoundaryConfig {
 
 // Error boundary implementation
 export class ErrorBoundary {
-  private config: ErrorBoundaryConfig
+  private setting: ErrorBoundarySetting
 
-  constructor(config: ErrorBoundaryConfig = {}) {
-    this.config = {
+  constructor(config: ErrorBoundarySetting = {}) {
+    this.setting = {
       fallbackToConsole: true,
       suppressErrors: false,
       ...config,
@@ -323,34 +323,34 @@ export class ErrorBoundary {
       const stoatError = this.normalizeError(error, context)
 
       // Call appropriate handlers
-      if (stoatError.severity === 'critical' && this.config.onCriticalError) {
-        await this.config.onCriticalError(stoatError)
-      } else if (stoatError instanceof SecurityError && this.config.onSecurityError) {
-        await this.config.onSecurityError(stoatError)
-      } else if (this.config.onError) {
-        await this.config.onError(stoatError)
+      if (stoatError.severity === 'critical' && this.setting.onCriticalError) {
+        await this.setting.onCriticalError(stoatError)
+      } else if (stoatError instanceof SecurityError && this.setting.onSecurityError) {
+        await this.setting.onSecurityError(stoatError)
+      } else if (this.setting.onError) {
+        await this.setting.onError(stoatError)
       }
 
       // Fallback to console if configured
-      if (this.config.fallbackToConsole) {
-        console.error('[STOAT Error Boundary]', stoatError.toJSON())
+      if (this.setting.fallbackToConsole) {
+        console.error('[StoatError Boundary]', stoatError.toJSON())
       }
 
       // Re-throw if not suppressed
-      if (!this.config.suppressErrors) {
+      if (!this.setting.suppressErrors) {
         throw stoatError
       }
     } catch (boundaryError) {
       // Prevent error boundary from crashing
-      if (this.config.fallbackToConsole) {
-        console.error('[STOAT Error Boundary - CRITICAL]', {
+      if (this.setting.fallbackToConsole) {
+        console.error('[StoatError Boundary - CRITICAL]', {
           originalError: error,
           boundaryError,
           context,
         })
       }
 
-      if (!this.config.suppressErrors) {
+      if (!this.setting.suppressErrors) {
         throw boundaryError
       }
     }

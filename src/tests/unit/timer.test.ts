@@ -7,9 +7,9 @@ import {
   assertLessOrEqual,
   assertThrows,
 } from '@std/assert'
-import { afterEach, beforeEach, describe, it } from '@std/testing/bdd'
+import { afterEach, describe, it } from '@std/testing/bdd'
 import { assertSpyCalls, returnsNext, spy, type Stub, stub } from '@std/testing/mock'
-import { Timer } from '../../services/timer.ts'
+import { Timer } from '../../utils/timer.ts'
 import { type StoatContext } from '../../stoat/context.ts'
 import type { PerformanceMetrics } from '../../types/metrics.ts'
 import { createRequestId } from '../../types/brands.ts'
@@ -44,13 +44,8 @@ function simulateWork(durationMs: number): void {
 }
 
 describe('Timer - Comprehensive Test Suite', () => {
-  let testContext: StoatContext
   let performanceStub: Stub | undefined
   let memoryStub: Stub | undefined
-
-  beforeEach(() => {
-    testContext = createTestContext()
-  })
 
   afterEach(() => {
     if (performanceStub) {
@@ -65,7 +60,7 @@ describe('Timer - Comprehensive Test Suite', () => {
 
   describe('Timer Construction and Initialization', () => {
     it('should create timer with operation name and context', () => {
-      const timer = new Timer('test-operation', testContext)
+      const timer = new Timer('test-operation')
 
       assertExists(timer)
       assertEquals(typeof timer, 'object')
@@ -75,45 +70,45 @@ describe('Timer - Comprehensive Test Suite', () => {
       const operations = ['data-fetch', 'order-processing', 'risk-calculation']
 
       operations.forEach((operation) => {
-        const timer = new Timer(operation, testContext)
+        const timer = new Timer(operation)
         assertExists(timer)
       })
     })
 
     it('should create timer with different contexts', () => {
       const contexts = [
-        createTestContext({ symbol: 'AAPL' }),
+        createTestContext({ symbol: 'NVDA' }),
         createTestContext({ symbol: 'GOOGL', strategy: 'momentum' }),
         createTestContext({ agentId: 'agent-123' }),
       ]
 
-      contexts.forEach((context) => {
-        const timer = new Timer('test-op', context)
+      contexts.forEach(() => {
+        const timer = new Timer('test-op')
         assertExists(timer)
       })
     })
 
     it('should handle empty operation name', () => {
-      const timer = new Timer('', testContext)
+      const timer = new Timer('')
       assertExists(timer)
     })
 
     it('should handle very long operation names', () => {
       const longName = 'a'.repeat(1000)
-      const timer = new Timer(longName, testContext)
+      const timer = new Timer(longName)
       assertExists(timer)
     })
 
     it('should handle special characters in operation name', () => {
       const specialName = 'test-op-🚀-émoji-ñ'
-      const timer = new Timer(specialName, testContext)
+      const timer = new Timer(specialName)
       assertExists(timer)
     })
   })
 
   describe('Performance Timing Accuracy', () => {
     it('should measure duration correctly for short operations', () => {
-      const timer = new Timer('short-operation', testContext)
+      const timer = new Timer('short-operation')
 
       simulateWork(10) // 10ms
 
@@ -126,7 +121,7 @@ describe('Timer - Comprehensive Test Suite', () => {
     })
 
     it('should measure duration correctly for medium operations', () => {
-      const timer = new Timer('medium-operation', testContext)
+      const timer = new Timer('medium-operation')
 
       simulateWork(50) // 50ms
 
@@ -137,7 +132,7 @@ describe('Timer - Comprehensive Test Suite', () => {
     })
 
     it('should measure very short durations', () => {
-      const timer = new Timer('instant-operation', testContext)
+      const timer = new Timer('instant-operation')
 
       // Stop immediately
       const metrics = timer.stop()
@@ -151,7 +146,7 @@ describe('Timer - Comprehensive Test Suite', () => {
       const durations: number[] = []
 
       for (let i = 0; i < 5; i++) {
-        const timer = new Timer(`consistency-test-${i}`, testContext)
+        const timer = new Timer(`consistency-test-${i}`)
         // No work, just measure timer overhead
         const metrics = timer.stop()
         durations.push(metrics.duration)
@@ -165,7 +160,7 @@ describe('Timer - Comprehensive Test Suite', () => {
     })
 
     it('should handle concurrent timer measurements', () => {
-      const timers = Array.from({ length: 10 }, (_, i) => new Timer(`concurrent-${i}`, testContext))
+      const timers = Array.from({ length: 10 }, (_, i) => new Timer(`concurrent-${i}`))
 
       // Simulate work and collect results
       const results = timers.map((timer, index) => {
@@ -185,7 +180,7 @@ describe('Timer - Comprehensive Test Suite', () => {
     it('should capture memory usage at start and end', () => {
       const memoryUsageSpy = spy(Deno, 'memoryUsage')
 
-      const timer = new Timer('memory-test', testContext)
+      const timer = new Timer('memory-test')
       const metrics = timer.stop()
 
       // Should call memoryUsage twice (start and end)
@@ -212,7 +207,7 @@ describe('Timer - Comprehensive Test Suite', () => {
 
       memoryStub = stub(Deno, 'memoryUsage', returnsNext([startMemory, endMemory]))
 
-      const timer = new Timer('delta-test', testContext)
+      const timer = new Timer('delta-test')
       const metrics = timer.stop()
 
       assertEquals(metrics.memoryDelta.rss, 200)
@@ -238,7 +233,7 @@ describe('Timer - Comprehensive Test Suite', () => {
 
       memoryStub = stub(Deno, 'memoryUsage', returnsNext([startMemory, endMemory]))
 
-      const timer = new Timer('negative-delta-test', testContext)
+      const timer = new Timer('negative-delta-test')
       const metrics = timer.stop()
 
       assertEquals(metrics.memoryDelta.rss, -200)
@@ -252,7 +247,7 @@ describe('Timer - Comprehensive Test Suite', () => {
 
       memoryStub = stub(Deno, 'memoryUsage', () => memory) // Same memory for both calls
 
-      const timer = new Timer('zero-delta-test', testContext)
+      const timer = new Timer('zero-delta-test')
       const metrics = timer.stop()
 
       assertEquals(metrics.memoryDelta.rss, 0)
@@ -278,7 +273,7 @@ describe('Timer - Comprehensive Test Suite', () => {
 
       memoryStub = stub(Deno, 'memoryUsage', returnsNext([startMemory, endMemory]))
 
-      const timer = new Timer('large-memory-test', testContext)
+      const timer = new Timer('large-memory-test')
       const metrics = timer.stop()
 
       assertEquals(metrics.memoryDelta.rss, 1000000)
@@ -290,7 +285,7 @@ describe('Timer - Comprehensive Test Suite', () => {
 
   describe('Stop Method and PerformanceMetrics', () => {
     it('should return complete PerformanceMetrics object', () => {
-      const timer = new Timer('complete-metrics-test', testContext)
+      const timer = new Timer('complete-metrics-test')
       const metrics = timer.stop()
 
       assertExists(metrics.operation)
@@ -306,14 +301,14 @@ describe('Timer - Comprehensive Test Suite', () => {
 
     it('should preserve operation name in metrics', () => {
       const operationName = 'preserve-name-test'
-      const timer = new Timer(operationName, testContext)
+      const timer = new Timer(operationName)
       const metrics = timer.stop()
 
       assertEquals(metrics.operation, operationName)
     })
 
     it('should generate valid ISO timestamp', () => {
-      const timer = new Timer('timestamp-test', testContext)
+      const timer = new Timer('timestamp-test')
       const metrics = timer.stop()
 
       // Should be valid ISO string
@@ -327,7 +322,7 @@ describe('Timer - Comprehensive Test Suite', () => {
     })
 
     it('should include complete memory delta object', () => {
-      const timer = new Timer('memory-delta-test', testContext)
+      const timer = new Timer('memory-delta-test')
       const metrics = timer.stop()
 
       assertExists(metrics.memoryDelta.rss)
@@ -342,7 +337,7 @@ describe('Timer - Comprehensive Test Suite', () => {
     })
 
     it('should allow multiple stop calls without error', () => {
-      const timer = new Timer('multiple-stop-test', testContext)
+      const timer = new Timer('multiple-stop-test')
 
       const metrics1 = timer.stop()
       const metrics2 = timer.stop()
@@ -360,7 +355,7 @@ describe('Timer - Comprehensive Test Suite', () => {
     })
 
     it('should provide accurate timing after multiple stops', () => {
-      const timer = new Timer('multiple-timing-test', testContext)
+      const timer = new Timer('multiple-timing-test')
 
       const metrics1 = timer.stop()
 
@@ -382,7 +377,7 @@ describe('Timer - Comprehensive Test Suite', () => {
       // Create many timers in rapid succession to test precision
       const timers = []
       for (let i = 0; i < 100; i++) {
-        timers.push(new Timer(`precision-test-${i}`, testContext))
+        timers.push(new Timer(`precision-test-${i}`))
       }
 
       const results = timers.map((timer) => timer.stop())
@@ -400,7 +395,7 @@ describe('Timer - Comprehensive Test Suite', () => {
       })
 
       assertThrows(
-        () => new Timer('memory-error-test', testContext),
+        () => new Timer('memory-error-test'),
         Error,
         'Memory access denied',
       )
@@ -410,7 +405,7 @@ describe('Timer - Comprehensive Test Suite', () => {
       // Mock performance.now to return very close values
       performanceStub = stub(performance, 'now', returnsNext([1000.0001, 1000.0002]))
 
-      const timer = new Timer('tiny-duration-test', testContext)
+      const timer = new Timer('tiny-duration-test')
       const metrics = timer.stop()
 
       assertExists(metrics.duration)
@@ -427,7 +422,7 @@ describe('Timer - Comprehensive Test Suite', () => {
       // Mock performance.now to return very different values
       performanceStub = stub(performance, 'now', returnsNext([0, 24 * 60 * 60 * 1000]))
 
-      const timer = new Timer('large-duration-test', testContext)
+      const timer = new Timer('large-duration-test')
       const metrics = timer.stop()
 
       assertExists(metrics.duration)
@@ -437,7 +432,7 @@ describe('Timer - Comprehensive Test Suite', () => {
 
   describe('Memory Measurement Validation', () => {
     it('should capture realistic memory values', () => {
-      const timer = new Timer('realistic-memory-test', testContext)
+      const timer = new Timer('realistic-memory-test')
       const metrics = timer.stop()
 
       // Memory values should be within reasonable ranges
@@ -460,7 +455,7 @@ describe('Timer - Comprehensive Test Suite', () => {
 
       memoryStub = stub(Deno, 'memoryUsage', () => edgeCaseMemory)
 
-      const timer = new Timer('edge-memory-test', testContext)
+      const timer = new Timer('edge-memory-test')
       const metrics = timer.stop()
 
       assertEquals(metrics.memoryDelta.rss, 0)
@@ -491,7 +486,7 @@ describe('Timer - Comprehensive Test Suite', () => {
 
         memoryStub = stub(Deno, 'memoryUsage', returnsNext([scenario.start, scenario.end]))
 
-        const timer = new Timer(`validation-test-${index}`, testContext)
+        const timer = new Timer(`validation-test-${index}`)
         const metrics = timer.stop()
 
         assertEquals(metrics.memoryDelta.rss, scenario.expected.rss)
@@ -504,7 +499,7 @@ describe('Timer - Comprehensive Test Suite', () => {
 
   describe('Integration and Real-world Scenarios', () => {
     it('should accurately measure actual work performance', () => {
-      const timer = new Timer('real-work-test', testContext)
+      const timer = new Timer('real-work-test')
 
       // Perform actual work
       const data = Array.from({ length: 10000 }, (_, i) => i * 2)
@@ -518,7 +513,7 @@ describe('Timer - Comprehensive Test Suite', () => {
     })
 
     it('should handle memory-intensive operations', () => {
-      const timer = new Timer('memory-intensive-test', testContext)
+      const timer = new Timer('memory-intensive-test')
 
       // Create and destroy large arrays to affect memory
       const arrays = []
@@ -539,7 +534,7 @@ describe('Timer - Comprehensive Test Suite', () => {
       const results: PerformanceMetrics[] = []
 
       for (let i = 0; i < 10; i++) {
-        const timer = new Timer(`consistency-${i}`, testContext)
+        const timer = new Timer(`consistency-${i}`)
 
         // Consistent work
         Math.sqrt(12345)
@@ -558,13 +553,13 @@ describe('Timer - Comprehensive Test Suite', () => {
 
     it('should work correctly with different context types', () => {
       const contexts = [
-        createTestContext({ symbol: 'AAPL', strategy: 'momentum' }),
+        createTestContext({ symbol: 'NVDA', strategy: 'momentum' }),
         createTestContext({ agentId: 'agent-123', portfolioId: 'port-456' }),
         createTestContext({ requestId: createRequestId('req-789') }),
       ]
 
-      contexts.forEach((context, index) => {
-        const timer = new Timer(`context-test-${index}`, context)
+      contexts.forEach((index) => {
+        const timer = new Timer(`context-test-${index}`)
         const metrics = timer.stop()
 
         assertEquals(metrics.operation, `context-test-${index}`)

@@ -5,9 +5,9 @@
  */
 
 import type { WriteResult } from './transport.ts'
-import type { StructuredLogEntry } from '../loggers/structured-log-entry.ts'
-import type { StoatContext } from '../stoat/context.ts'
-import type { LogLevelName } from '../types/logLevels.ts'
+import type { StructuredLogEntry } from '../structured-log-entry.ts'
+import type { StoatContext } from '../../stoat/context.ts'
+import type { LogLevelName } from '../../types/logLevels.ts'
 import { BaseTransport, type BaseTransportConfig, TransportWriteError } from './transport.ts'
 
 /**
@@ -53,7 +53,7 @@ const RESET_COLOR = '\x1b[0m'
  * @class ConsoleTransport
  * @param {ConsoleTransportConfig} config - Configuration for the console transport
  */
-export class ConsoleTransport extends BaseTransport {
+export class ConsoleTransportService extends BaseTransport {
   private colorMap: Record<LogLevelName, string>
   private useColors: boolean
 
@@ -337,7 +337,7 @@ export class ConsoleTransport extends BaseTransport {
  * @param {Partial<ConsoleTransportConfig>} [options={}] - Optional configuration overrides
  * @returns {ConsoleTransport} - Instance of ConsoleTransport with provided configuration
  */
-export function createConsoleTransport(options: Partial<ConsoleTransportConfig> = {}): ConsoleTransport {
+export function createConsoleTransport(options: Partial<ConsoleTransportConfig> = {}): ConsoleTransportService {
   const config: ConsoleTransportConfig = {
     destination: 'console',
     enabled: true,
@@ -350,5 +350,5 @@ export function createConsoleTransport(options: Partial<ConsoleTransportConfig> 
     ...options,
   }
 
-  return new ConsoleTransport(config)
+  return new ConsoleTransportService(config)
 }

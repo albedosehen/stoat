@@ -2,9 +2,9 @@
  * Input Sanitizer and Data Redactor
  * @module
  */
-import type { RedactedData, SanitizedInput } from '../types/brands.ts'
-import type { SecurityConfig } from '../types/config.ts'
-import { createErrorContext, DataRedactionError, InputSanitizationError, SecurityError } from '../errors/errors.ts'
+import type { RedactedData, SanitizedInput } from '../../types/brands.ts'
+import type { SecurityConfig } from '../../types/config.ts'
+import { createErrorContext, DataRedactionError, InputSanitizationError, SecurityError } from '../../errors/errors.ts'
 
 /**
  * Default patterns for sensitive data redaction
@@ -290,7 +290,7 @@ export class InputSanitizer {
     const redactPaths = options.paths ?? this.config.redactPaths
 
     for (const [key, value] of Object.entries(obj)) {
-      const shouldRedactKey = redactPaths?.some((path) => key.toLowerCase().includes(path.toLowerCase())) ?? false
+      const shouldRedactKey = redactPaths?.some((path: string) => key.toLowerCase().includes(path.toLowerCase())) ?? false
 
       if (shouldRedactKey) {
         result[key] = '[REDACTED]'
